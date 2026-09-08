@@ -7,3 +7,6 @@ PyMuPDF (fitz): Fast C-based PDF engine. Extracts text by visual blocks (vital f
 
 Swagger UI
 What it is: An auto-generated, interactive web interface for your FastAPI backend.
+Chunking is the process of breaking down a large piece of text into smaller, manageable segments (or "chunks").
+
+In the context of the RAG (Retrieval-Augmented Generation) project you are building, once you extract the text from your uploaded PDF, you will need to "chunk" that text before feeding it to an AI.
