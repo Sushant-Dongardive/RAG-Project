@@ -1,4 +1,5 @@
 import re
+from backend.rag.text_cleaner import clean_text
 
 
 def split_into_sentences(text):
@@ -25,8 +26,7 @@ def chunk_pages(pages, chunk_size=500, overlap=100):
 
     for page in pages:
         page_number = page["page"]
-        text = page["text"].strip()
-
+        text = clean_text(page["text"])
         sentences = split_into_sentences(text)
 
         current_chunk = ""
