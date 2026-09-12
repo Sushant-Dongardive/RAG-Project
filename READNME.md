@@ -48,3 +48,11 @@ An Embedding Model: To convert document chunks and search queries into numerical
 A Generator LLM: To read the retrieved text chunks and write the final answer.
 
 Instead of paying for third-party cloud API keys like OpenAI or Anthropic, you can install Ollama and use its Python library to handle both embeddings and generation completely offline:
+
+What is BM25?
+BM25 (short for Best Matching 25, originally developed as Okapi BM25) is a probabilistic lexical (keyword-based) search algorithm.
+
+It ranks a set of documents or text chunks based on how relevant they are to a user's search query by counting exact word matches.
+
+Why BM25 is Used in RAG (Hybrid Search)
+In production RAG systems, relying solely on vector embeddings (like FAISS) can cause retrieval failures when a user searches for an exact part number, function name, or acronym.
