@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Agentic RAG Platform</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">R</div>
+
+            <div>
+                <h2>Agentic RAG</h2>
+                <span>Research Intelligence</span>
+            </div>
+        </div>
+
+        <nav class="navigation">
+
+            <button class="nav-item active" data-view="workspace">
+                <span>⌂</span>
+                <span>Research Workspace</span>
+            </button>
+
+            <button class="nav-item" data-view="graph">
+                <span>◎</span>
+                <span>Knowledge Graph</span>
+            </button>
+
+            <button class="nav-item" data-view="vectors">
+                <span>◈</span>
+                <span>Vector Projection</span>
+            </button>
+
+            <button class="nav-item" data-view="compare">
+                <span>⇄</span>
+                <span>Multi-Paper Compare</span>
+            </button>
+
+            <button class="nav-item" data-view="ingestion">
+                <span>↑</span>
+                <span>Document & OCR</span>
+            </button>
+
+            <button class="nav-item" data-view="benchmarks">
+                <span>▥</span>
+                <span>RAG Benchmarks</span>
+            </button>
+
+            <button class="nav-item" data-view="docs">
+                <span>?</span>
+                <span>Project Docs & Viva</span>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+
+                <div>
+                    <strong>System Online</strong>
+                    <small>Local RAG Engine</small>
+                </div>
+            </div>
+
+            <div class="version">
+                Agentic RAG Platform<br>
+                v1.0.0
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <div>
+                <h1 id="page-title">Research Workspace</h1>
+                <p id="page-subtitle">
+                    Ask questions and retrieve verified knowledge from your documents.
+                </p>
+            </div>
+
+            <div class="topbar-actions">
+
+                <span class="backend-status">
+                    <span class="status-dot"></span>
+                    Backend Ready
+                </span>
+
+                <button class="icon-button" id="themeButton">
+                    ◐
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================= WORKSPACE ================= -->
+
+        <section class="view active" id="workspace">
+
+            <div class="workspace-grid">
+
+                <div class="main-column">
+
+                    <div class="card query-card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <h3>Research Query</h3>
+                                <p>Ask questions about your knowledge base.</p>
+                            </div>
+
+                            <span class="agent-badge">
+                                4-Agent Pipeline
+                            </span>
+
+                        </div>
+
+                        <textarea
+                            id="queryInput"
+                            placeholder="Ask something about your documents..."
+                        ></textarea>
+
+                        <div class="prompt-chips">
+
+                            <button class="prompt-chip">
+                                Summarize the main findings
+                            </button>
+
+                            <button class="prompt-chip">
+                                What methodology was used?
+                            </button>
+
+                            <button class="prompt-chip">
+                                Compare the algorithms
+                            </button>
+
+                            <button class="prompt-chip">
+                                What are the limitations?
+                            </button>
+
+                        </div>
+
+                        <div class="query-actions">
+
+                            <span class="query-info">
+                                Evidence-based answers only
+                            </span>
+
+                            <button class="primary-button" id="askButton">
+                                Ask Agentic RAG →
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- AGENT PIPELINE -->
+
+                    <div class="card">
+
+                        <div class="card-header">
+                            <div>
+                                <h3>Agent Pipeline</h3>
+                                <p>Processing stages for the current query.</p>
+                            </div>
+                        </div>
+
+                        <div class="agent-pipeline">
+
+                            <div class="agent-step active">
+                                <div class="agent-number">1</div>
+
+                                <div>
+                                    <strong>Planner</strong>
+                                    <small>Query analysis</small>
+                                </div>
+                            </div>
+
+                            <div class="pipeline-line"></div>
+
+                            <div class="agent-step">
+                                <div class="agent-number">2</div>
+
+                                <div>
+                                    <strong>Retriever</strong>
+                                    <small>Hybrid retrieval</small>
+                                </div>
+                            </div>
+
+                            <div class="pipeline-line"></div>
+
+                            <div class="agent-step">
+                                <div class="agent-number">3</div>
+
+                                <div>
+                                    <strong>Synthesizer</strong>
+                                    <small>Answer generation</small>
+                                </div>
+                            </div>
+
+                            <div class="pipeline-line"></div>
+
+                            <div class="agent-step">
+                                <div class="agent-number">4</div>
+
+                                <div>
+                                    <strong>Fact Checker</strong>
+                                    <small>Evidence verification</small>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ANSWER -->
+
+                    <div class="card answer-card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <h3>Final Answer</h3>
+                                <p>Verified response generated by the system.</p>
+                            </div>
+
+                            <span class="verification-badge" id="verificationBadge">
+                                Waiting
+                            </span>
+
+                        </div>
+
+                        <div id="answerContainer" class="answer-container">
+
+                            <div class="empty-state">
+
+                                <div class="empty-icon">✦</div>
+
+                                <h3>No query yet</h3>
+
+                                <p>
+                                    Ask a question to see the Agentic RAG answer.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SOURCES -->
+
+                    <div class="card">
+
+                        <div class="card-header">
+
+                            <div>
+                                <h3>Evidence & Sources</h3>
+                                <p>Retrieved evidence used to generate the answer.</p>
+                            </div>
+
+                            <span id="sourceCount">0 sources</span>
+
+                        </div>
+
+                        <div id="sourcesContainer" class="sources-container">
+
+                            <div class="empty-state small">
+                                Sources will appear here after a query.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RIGHT PANEL -->
+
+                <aside class="right-column">
+
+                    <div class="card stats-card">
+
+                        <h3>Knowledge Base</h3>
+
+                        <div class="stat">
+                            <span>Documents</span>
+                            <strong id="documentCount">0</strong>
+                        </div>
+
+                        <div class="stat">
+                            <span>Chunks</span>
+                            <strong id="chunkCount">0</strong>
+                        </div>
+
+                        <div class="stat">
+                            <span>Vectors</span>
+                            <strong id="vectorCount">0</strong>
+                        </div>
+
+                        <div class="stat">
+                            <span>Graph Entities</span>
+                            <strong id="entityCount">0</strong>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card retrieval-card">
+
+                        <h3>Retrieval Strategy</h3>
+
+                        <div class="strategy active">
+                            <span>✓</span>
+                            <div>
+                                <strong>Dense Vector</strong>
+                                <small>Semantic similarity</small>
+                            </div>
+                        </div>
+
+                        <div class="strategy active">
+                            <span>✓</span>
+                            <div>
+                                <strong>BM25</strong>
+                                <small>Keyword matching</small>
+                            </div>
+                        </div>
+
+                        <div class="strategy active">
+                            <span>✓</span>
+                            <div>
+                                <strong>RRF</strong>
+                                <small>Rank fusion</small>
+                            </div>
+                        </div>
+
+                        <div class="strategy">
+                            <span>○</span>
+                            <div>
+                                <strong>GraphRAG</strong>
+                                <small>Knowledge graph</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card quick-card">
+
+                        <h3>Quick Actions</h3>
+
+                        <button class="secondary-button"
+                                data-view-target="ingestion">
+                            + Upload Document
+                        </button>
+
+                        <button class="secondary-button"
+                                data-view-target="compare">
+                            ⇄ Compare Papers
+                        </button>
+
+                        <button class="secondary-button"
+                                data-view-target="benchmarks">
+                            ▥ View Benchmarks
+                        </button>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= KNOWLEDGE GRAPH ================= -->
+
+        <section class="view" id="graph">
+
+            <div class="page-grid">
+
+                <div class="card graph-card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h3>Knowledge Graph</h3>
+                            <p>
+                                Entities and relationships extracted from your documents.
+                            </p>
+                        </div>
+
+                        <button class="secondary-button">
+                            Refresh Graph
+                        </button>
+
+                    </div>
+
+                    <div class="graph-container">
+
+                        <div class="graph-node node-center">
+                            Fingerprint<br>Verification
+                        </div>
+
+                        <div class="graph-node node-1">
+                            Machine<br>Learning
+                        </div>
+
+                        <div class="graph-node node-2">
+                            Classifier
+                        </div>
+
+                        <div class="graph-node node-3">
+                            Fuzzy<br>Clustering
+                        </div>
+
+                        <div class="graph-node node-4">
+                            Cost Sensitive
+                        </div>
+
+                        <div class="graph-node node-5">
+                            Bagging
+                        </div>
+
+                        <div class="graph-node node-6">
+                            Random Forest
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h3>Graph Statistics</h3>
+                    </div>
+
+                    <div class="metric-grid">
+
+                        <div class="metric">
+                            <strong>0</strong>
+                            <span>Entities</span>
+                        </div>
+
+                        <div class="metric">
+                            <strong>0</strong>
+                            <span>Relationships</span>
+                        </div>
+
+                        <div class="metric">
+                            <strong>0</strong>
+                            <span>Concepts</span>
+                        </div>
+
+                        <div class="metric">
+                            <strong>0</strong>
+                            <span>Documents</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= VECTOR PROJECTION ================= -->
+
+        <section class="view" id="vectors">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h3>Vector Projection</h3>
+                        <p>
+                            PCA visualization of document embeddings.
+                        </p>
+                    </div>
+
+                    <div class="control-group">
+
+                        <select id="projectionDimension">
+                            <option value="2">2D Projection</option>
+                            <option value="3">3D Projection</option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div class="vector-space">
+
+                    <div class="axis axis-x"></div>
+                    <div class="axis axis-y"></div>
+
+                    <span class="point p1"></span>
+                    <span class="point p2"></span>
+                    <span class="point p3"></span>
+                    <span class="point p4"></span>
+                    <span class="point p5"></span>
+                    <span class="point p6"></span>
+
+                    <div class="vector-label label-1">
+                        Research
+                    </div>
+
+                    <div class="vector-label label-2">
+                        Algorithm
+                    </div>
+
+                    <div class="vector-label label-3">
+                        Results
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= COMPARISON ================= -->
+
+        <section class="view" id="compare">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h3>Multi-Paper Comparison</h3>
+                        <p>
+                            Compare research documents across important dimensions.
+                        </p>
+                    </div>
+
+                    <button class="primary-button">
+                        Run Comparison
+                    </button>
+
+                </div>
+
+                <div class="paper-select-grid">
+
+                    <div class="paper-selector">
+                        <span>Paper 1</span>
+                        <select>
+                            <option>Select document</option>
+                            <option>Fingerprint Verification Paper</option>
+                        </select>
+                    </div>
+
+                    <div class="paper-selector">
+                        <span>Paper 2</span>
+                        <select>
+                            <option>Select document</option>
+                        </select>
+                    </div>
+
+                    <div class="paper-selector">
+                        <span>Paper 3</span>
+                        <select>
+                            <option>Select document</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="comparison-table-wrapper">
+
+                    <table class="comparison-table">
+
+                        <thead>
+                            <tr>
+                                <th>Dimension</th>
+                                <th>Paper 1</th>
+                                <th>Paper 2</th>
+                                <th>Paper 3</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <tr>
+                                <td>Methodology</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                            <tr>
+                                <td>Dataset</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                            <tr>
+                                <td>Architecture</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                            <tr>
+                                <td>Results</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                            <tr>
+                                <td>Limitations</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                            <tr>
+                                <td>Future Work</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td>—</td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= INGESTION ================= -->
+
+        <section class="view" id="ingestion">
+
+            <div class="page-grid">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <div>
+                            <h3>Document Ingestion</h3>
+                            <p>
+                                Upload documents for processing and indexing.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="upload-area" id="uploadArea">
+
+                        <div class="upload-icon">↑</div>
+
+                        <h3>Drop your document here</h3>
+
+                        <p>
+                            or select a file from your computer
+                        </p>
+
+                        <input
+                            type="file"
+                            id="fileInput"
+                            hidden
+                            accept=".pdf,.txt,.md,.py,.js,.java,.cpp,.c,.json,.html,.png,.jpg,.jpeg"
+                        >
+
+                        <button
+                            class="primary-button"
+                            id="selectFileButton">
+                            Select Document
+                        </button>
+
+                        <small>
+                            PDF, OCR images, TXT, Markdown and source code
+                        </small>
+
+                    </div>
+
+                    <div id="uploadResult" class="upload-result"></div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-header">
+                        <h3>Processing Pipeline</h3>
+                    </div>
+
+                    <div class="processing-list">
+
+                        <div class="processing-step">
+                            <span>1</span>
+                            <div>
+                                <strong>Document Parsing</strong>
+                                <small>Extract text and structure</small>
+                            </div>
+                        </div>
+
+                        <div class="processing-step">
+                            <span>2</span>
+                            <div>
+                                <strong>OCR</strong>
+                                <small>Process scanned documents</small>
+                            </div>
+                        </div>
+
+                        <div class="processing-step">
+                            <span>3</span>
+                            <div>
+                                <strong>Smart Chunking</strong>
+                                <small>Create meaningful chunks</small>
+                            </div>
+                        </div>
+
+                        <div class="processing-step">
+                            <span>4</span>
+                            <div>
+                                <strong>Embeddings</strong>
+                                <small>Generate vector representations</small>
+                            </div>
+                        </div>
+
+                        <div class="processing-step">
+                            <span>5</span>
+                            <div>
+                                <strong>Knowledge Graph</strong>
+                                <small>Extract entities and relationships</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h3>Indexed Documents</h3>
+                        <p>Your current knowledge base.</p>
+                    </div>
+
+                </div>
+
+                <div id="documentsList" class="documents-list">
+
+                    <div class="empty-state small">
+                        No documents indexed yet.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= BENCHMARKS ================= -->
+
+        <section class="view" id="benchmarks">
+
+            <div class="metric-grid benchmark-grid">
+
+                <div class="metric-card">
+
+                    <span>Average Latency</span>
+                    <strong id="latencyMetric">—</strong>
+                    <small>milliseconds</small>
+
+                </div>
+
+                <div class="metric-card">
+
+                    <span>Precision@3</span>
+                    <strong id="precisionMetric">—</strong>
+                    <small>retrieval precision</small>
+
+                </div>
+
+                <div class="metric-card">
+
+                    <span>MRR</span>
+                    <strong id="mrrMetric">—</strong>
+                    <small>mean reciprocal rank</small>
+
+                </div>
+
+                <div class="metric-card">
+
+                    <span>Faithfulness</span>
+                    <strong id="faithfulnessMetric">—</strong>
+                    <small>answer verification</small>
+
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <h3>Retrieval Benchmark</h3>
+                        <p>
+                            Compare different retrieval strategies.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="benchmark-bars">
+
+                    <div class="benchmark-row">
+
+                        <div>
+                            <strong>BM25</strong>
+                            <span>Keyword Retrieval</span>
+                        </div>
+
+                        <div class="bar">
+                            <div style="width: 45%"></div>
+                        </div>
+
+                        <strong>—</strong>
+
+                    </div>
+
+
+                    <div class="benchmark-row">
+
+                        <div>
+                            <strong>Dense</strong>
+                            <span>Vector Retrieval</span>
+                        </div>
+
+                        <div class="bar">
+                            <div style="width: 65%"></div>
+                        </div>
+
+                        <strong>—</strong>
+
+                    </div>
+
+
+                    <div class="benchmark-row">
+
+                        <div>
+                            <strong>Hybrid + RRF</strong>
+                            <span>Combined Retrieval</span>
+                        </div>
+
+                        <div class="bar">
+                            <div style="width: 85%"></div>
+                        </div>
+
+                        <strong>—</strong>
+
+                    </div>
+
+
+                    <div class="benchmark-row">
+
+                        <div>
+                            <strong>Hybrid + Reranker</strong>
+                            <span>Advanced Retrieval</span>
+                        </div>
+
+                        <div class="bar">
+                            <div style="width: 95%"></div>
+                        </div>
+
+                        <strong>—</strong>
+
+                    </div>
+
+                </div>
+
+                <p class="benchmark-note">
+                    Metrics will be populated from the real evaluation dataset.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= DOCS ================= -->
+
+        <section class="view" id="docs">
+
+            <div class="docs-grid">
+
+                <div class="card docs-navigation">
+
+                    <h3>Project Documentation</h3>
+
+                    <button class="doc-link active">
+                        Project Overview
+                    </button>
+
+                    <button class="doc-link">
+                        System Architecture
+                    </button>
+
+                    <button class="doc-link">
+                        Agent Architecture
+                    </button>
+
+                    <button class="doc-link">
+                        RAG Methodology
+                    </button>
+
+                    <button class="doc-link">
+                        GraphRAG
+                    </button>
+
+                    <button class="doc-link">
+                        Evaluation
+                    </button>
+
+                    <button class="doc-link">
+                        Limitations
+                    </button>
+
+                    <button class="doc-link">
+                        Future Scope
+                    </button>
+
+                    <button class="doc-link">
+                        Viva Questions
+                    </button>
+
+                </div>
+
+
+                <div class="card documentation-content">
+
+                    <h2>Agentic RAG Platform</h2>
+
+                    <p class="lead">
+                        Agentic RAG Platform for Academic & Enterprise Intelligence.
+                    </p>
+
+                    <h3>Primary Objective</h3>
+
+                    <p>
+                        Build an Agentic Retrieval-Augmented Generation system
+                        that retrieves relevant knowledge from documents,
+                        generates evidence-based answers and verifies the
+                        generated information.
+                    </p>
+
+                    <h3>Four-Agent Architecture</h3>
+
+                    <div class="architecture-list">
+
+                        <div>
+                            <strong>Planner Agent</strong>
+                            <span>Understands the query and selects a retrieval strategy.</span>
+                        </div>
+
+                        <div>
+                            <strong>Retriever Agent</strong>
+                            <span>Retrieves evidence using vector search, BM25 and RRF.</span>
+                        </div>
+
+                        <div>
+                            <strong>Synthesizer Agent</strong>
+                            <span>Generates an answer using retrieved evidence.</span>
+                        </div>
+
+                        <div>
+                            <strong>Fact-Checker Agent</strong>
+                            <span>Verifies generated claims against the evidence.</span>
+                        </div>
+
+                    </div>
+
+                    <h3>Current Technology Stack</h3>
+
+                    <div class="tech-tags">
+
+                        <span>Python</span>
+                        <span>FastAPI</span>
+                        <span>FAISS</span>
+                        <span>BM25</span>
+                        <span>RRF</span>
+                        <span>Sentence Transformers</span>
+                        <span>Ollama</span>
+                        <span>LLM</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script src="js/app.js"></script>
+
+</body>
+</html>

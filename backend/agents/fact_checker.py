@@ -32,48 +32,67 @@ def fact_check_answer(question: str, synthesized: dict, retrieval: dict):
     prompt = f"""
 You are the Fact-Checker Agent of an Agentic RAG system.
 
-Check whether the generated answer is directly supported
+Your task is to verify whether the generated answer is supported
 by the retrieved evidence.
 
-Important table-reading instructions:
-
-The evidence contains a classifier-performance table.
-
-The classifier order is:
-
-Bagging, Adaboost, J48, Random Forest, Cost Sensitive, NB tree
-
-The values in the "Percentage correct" row are:
-
-95.06, 95.06, 93.87, 94.03, 96, 91.23
-
-Match the values by position:
-
-- Bagging = 95.06%
-- Adaboost = 95.06%
-- J48 = 93.87%
-- Random Forest = 94.03%
-- Cost Sensitive = 96%
-- NB tree = 91.23%
-
-For this table:
-- "Percentage correct" represents the classifier's accuracy.
-- Therefore, "96% percentage correct" supports the statement
-  that the cost-sensitive classifier achieved 96% accuracy.
-
 Rules:
-- Use only the provided evidence.
+- Use ONLY the retrieved evidence.
 - Do not use outside knowledge.
+- Check factual claims carefully.
 - Check numerical values carefully.
-- Check whether the answer matches the table.
-- If the answer is supported, return VERIFIED.
-- If the answer is unsupported, return NOT_VERIFIED.
-- If the evidence contradicts the answer, return CONTRADICTED.
+- Do not reject an answer merely because the evidence
+  does not repeat the claim as a normal sentence.
+- Tables are important evidence.
 
-Return exactly this format:
+TABLE INTERPRETATION:
 
-Status: VERIFIED or NOT_VERIFIED or CONTRADICTED
+PDF text extraction may flatten a table into a sequence of
+headers followed by a sequence of values.
+
+When this happens, values in the same row correspond
+positionally to the headers in the same order.
+
+For example, if a table contains:
+
+Headers:
+A B C D
+
+Values:
+10 20 30 40
+
+then the correct mapping is:
+
+A → 10
+B → 20
+C → 30
+D → 40
+
+Use this positional mapping when checking numerical claims
+from flattened tables.
+
+If the generated answer identifies a value for a particular
+column and that value is supported by the corresponding
+position in the retrieved table, consider the claim supported.
+
+Also distinguish between:
+- a metric name
+- its value
+- the entity/classifier/column to which that value belongs.
+
+If the question asks for accuracy and the table uses a metric
+such as "Percentage correct", determine whether that metric
+is the relevant accuracy measure from the table context.
+
+Return exactly:
+
+Status: VERIFIED
+or
+Status: NOT_VERIFIED
+or
+Status: CONTRADICTED
+
 Reason: short explanation
+
 
 Question:
 {question}
@@ -81,7 +100,7 @@ Question:
 Generated Answer:
 {answer}
 
-Evidence:
+Retrieved Evidence:
 {evidence}
 """
 

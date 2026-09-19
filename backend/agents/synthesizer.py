@@ -9,7 +9,6 @@ def synthesize_answer(question: str, retrieval: dict):
 
     results = retrieval["results"]
 
-    # If no evidence was found
     if not results:
         return {
             "question": question,
@@ -20,11 +19,9 @@ def synthesize_answer(question: str, retrieval: dict):
             "sources": []
         }
 
-    # Prepare evidence for the LLM
     evidence_parts = []
 
     for rank, result in enumerate(results, start=1):
-
         evidence_parts.append(
             f"[Source {rank} | Page {result['page']}]\n"
             f"{result['text']}"
@@ -37,31 +34,25 @@ You are the Synthesizer Agent of an Agentic RAG system.
 
 Answer the user's question using ONLY the retrieved evidence.
 
-Important instructions:
-- The answer may be present inside a table.
-- Read table headers and values carefully.
-- Match each value with the correct column.
-- Do not say that information is missing when the evidence contains it.
+Rules:
+- Use only the provided evidence.
 - Do not use outside knowledge.
 - Do not invent facts.
-- Mention the relevant page number.
-- Give a short and direct answer.
-
-For the classifier-performance table, the column order is:
-
-Bagging, Adaboost, J48, Random Forest, Cost Sensitive, NB tree
-
-The Percentage correct values in the same order are:
-
-95.06, 95.06, 93.87, 94.03, 96, 91.23
-
-Therefore:
-- Bagging = 95.06%
-- Adaboost = 95.06%
-- J48 = 93.87%
-- Random Forest = 94.03%
-- Cost Sensitive = 96%
-- NB tree = 91.23%
+- Carefully interpret tables.
+- When a table contains column headers and values,
+  match each value with the corresponding header.
+- If the question asks for accuracy and the evidence
+  provides a "Percentage correct" metric for the
+  relevant classifier, use that value as the reported
+  accuracy.
+- Give the numerical value exactly as shown in the evidence.
+- Do not write phrases such as "96 Percentage correct".
+- Use natural wording such as "96%".
+- Mention the page number when possible.
+- Keep the answer short and direct.
+- If the evidence genuinely does not contain the answer,
+  say:
+  "The provided evidence does not contain enough information."
 
 Question:
 {question}
@@ -74,7 +65,6 @@ Final Answer:
 
     answer = generate_answer(prompt)
 
-    # Extract source information
     sources = []
 
     for result in results:
