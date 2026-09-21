@@ -1,0 +1,13 @@
+# Python environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Local data & environment variables
+Data/Documents/
+.env
+
+# IDE / Operating System files
+.vscode/
+.DS_Store
