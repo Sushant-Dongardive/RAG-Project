@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agentic RAG Engine | Capstone 2026</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #05070e; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .neon-panel { background: #080d1a; border: 1px solid #141f38; }
+    .trace-card { background: #040814; border: 1px solid #111d38; }
+    .active-nav { background: #1e1b4b; border-left: 4px solid #6366f1; color: #818cf8; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #05070e; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+  <!-- Top App Bar -->
+  <header class="h-14 border-b border-gray-800 bg-[#060a14] px-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-lg">⚡</div>
+      <div>
+        <h1 class="font-bold text-sm text-gray-100 uppercase tracking-wider">Agentic RAG Engine</h1>
+        <p class="text-[10px] text-cyan-400 font-medium">AI KNOWLEDGE & CODE SYSTEM</p>
+      </div>
+    </div>
+
+    <!-- Active Knowledge Dataset Selector -->
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-gray-400">Active Knowledge Dataset:</span>
+      <div class="relative">
+        <select id="activeDatasetSelect" class="bg-[#0b1222] border border-gray-700 text-xs rounded-md px-3 py-1.5 text-gray-200 focus:outline-none focus:border-indigo-500">
+          <option value="">-- Select Active Dataset --</option>
+          <option value="ALL">📊 All Datasets (Global Knowledge Base)</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body Content -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside class="w-64 border-r border-gray-800 bg-[#060a14] flex flex-col justify-between p-3">
+      <nav class="space-y-1">
+        <button onclick="switchView('workspace')" id="btn-workspace" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium active-nav text-left transition">
+          <i class="fa-solid fa-compass text-indigo-400"></i> Research Workspace
+        </button>
+        <button onclick="switchView('kb')" id="btn-kb" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-gray-900 text-left transition">
+          <i class="fa-solid fa-database text-cyan-400"></i> Knowledge Base (SQLite Datasets)
+        </button>
+        <button onclick="switchView('compare')" id="btn-compare" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-gray-900 text-left transition">
+          <i class="fa-solid fa-copy text-emerald-400"></i> Multi-Paper Compare
+        </button>
+        <button onclick="switchView('ingestion')" id="btn-ingest" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-gray-900 text-left transition">
+          <i class="fa-solid fa-file-arrow-up text-pink-400"></i> Document & OCR Ingestion
+        </button>
+      </nav>
+
+      <div class="p-3 border-t border-gray-800 text-[11px] text-gray-500">
+        <div>Computer Science Engineering</div>
+        <div class="text-[10px] text-gray-600">Final Year Capstone 2026</div>
+        <span class="inline-block mt-2 px-2 py-0.5 rounded text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800">
+          SQLite + Web Fallback + Guardrails
+        </span>
+      </div>
+    </aside>
+
+    <!-- Center Workspace -->
+    <main class="flex-1 overflow-y-auto p-6 bg-[#04060d]">
+      
+      <!-- VIEW 1: Research Workspace -->
+      <section id="view-workspace" class="grid grid-cols-12 gap-6">
+        <div class="col-span-8 space-y-6">
+          <div class="neon-panel p-5 rounded-xl">
+            <h2 class="text-sm font-semibold text-gray-200 flex items-center gap-2 mb-3">
+              <i class="fa-regular fa-compass text-cyan-400"></i> Multi-Agent Hybrid Search
+            </h2>
+            <div class="flex gap-3">
+              <input id="ragQueryInput" type="text" value="what is accuracy of cost sensitivity classifier?" 
+                     class="flex-1 bg-[#050914] border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+              <button onclick="runRAGSearch()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2.5 rounded-lg shadow-lg transition">
+                Execute RAG Agent
+              </button>
+            </div>
+          </div>
+
+          <!-- Grounded Database Response Box -->
+          <div class="neon-panel p-5 rounded-xl min-h-[280px]">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-semibold text-emerald-400 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check"></i> Grounded Database Response
+              </span>
+              <span id="responseSourceTag" class="text-[11px] text-gray-500 font-mono">distorted.pdf (Page 8)</span>
+            </div>
+            
+            <div id="groundedAnswerBox" class="text-sm text-gray-200 leading-relaxed font-light">
+              According to Table 3, the accuracy of the cost-sensitive classifier is 96%.
+            </div>
+
+            <!-- Fallback Search Dialog -->
+            <div id="fallbackModal" class="hidden mt-6 p-4 rounded-lg bg-amber-950/40 border border-amber-800/60">
+              <p class="text-xs text-amber-300">Target information is not present in this dataset. Would you like to search our Global AI?</p>
+              <button onclick="switchToGlobalWithQuery()" class="mt-2 text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium px-3 py-1.5 rounded">
+                Search on Our Global AI
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side Agent Trace -->
+        <div class="col-span-4">
+          <div class="trace-card rounded-xl p-5 h-full flex flex-col">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-800 mb-4">
+              <span class="text-xs font-semibold text-gray-200 flex items-center gap-2">
+                <i class="fa-solid fa-robot text-pink-400"></i> Agent Execution Trace
+              </span>
+              <span class="text-[10px] text-emerald-400">Self-RAG Guardrails</span>
+            </div>
+            <div id="traceLogContainer" class="space-y-4 text-xs font-mono flex-1 overflow-y-auto pr-1">
+              <div>
+                <p class="text-indigo-400 font-semibold">[Planner Agent]</p>
+                <p class="text-gray-400 text-[11px]">Analyzing query intent: 'what is accuracy of cost sensitivity classifier?'. Routing to local SQLite knowledge store.</p>
+              </div>
+              <div>
+                <p class="text-cyan-400 font-semibold">[BM25 & Vector Retriever]</p>
+                <p class="text-gray-400 text-[11px]">Retrieved 2 records from SQLite: distorted.pdf (Page 8), distorted.pdf (Page 7).</p>
+              </div>
+              <div>
+                <p class="text-purple-400 font-semibold">[Synthesizer Agent]</p>
+                <p class="text-gray-400 text-[11px]">Synthesizing answer using grounded context...</p>
+              </div>
+              <div>
+                <p class="text-emerald-400 font-semibold">[Fact-Checker (Self-RAG)]</p>
+                <p class="text-gray-400 text-[11px]">Verification Status: Passed (No factual contradictions found).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: Knowledge Base Datasets & History -->
+      <section id="view-kb" class="hidden grid grid-cols-12 gap-6 h-full">
+        <div class="col-span-4 neon-panel p-4 rounded-xl flex flex-col">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-xs font-semibold text-cyan-400 uppercase tracking-wide">Knowledge Datasets</h3>
+            <button onclick="syncLocalFolder()" title="Rescan folder" class="text-xs text-indigo-400 hover:text-indigo-300">
+              <i class="fa-solid fa-arrows-rotate"></i> Sync
+            </button>
+          </div>
+          <div id="datasetListContainer" class="space-y-2 flex-1 overflow-y-auto pr-1"></div>
+        </div>
+        <div class="col-span-8 neon-panel p-4 rounded-xl flex flex-col">
+          <h3 id="kbHistoryTitle" class="text-xs font-semibold text-gray-300 uppercase mb-3">Dataset Interaction History</h3>
+          <div id="kbHistoryContainer" class="space-y-3 flex-1 overflow-y-auto">
+            <p class="text-xs text-gray-500">Select any dataset on the left to view historical queries and grounded answers.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: Multi-Paper Compare -->
+      <section id="view-compare" class="hidden grid grid-cols-12 gap-6 h-full">
+        <div class="col-span-4 neon-panel p-4 rounded-xl space-y-4">
+          <h3 class="text-xs font-semibold text-emerald-400 uppercase">Compare Documents</h3>
+          <div>
+            <label class="text-[11px] text-gray-400">Document 1</label>
+            <select id="compareDocA" class="w-full mt-1 bg-[#050914] border border-gray-800 rounded p-2 text-xs text-gray-200"></select>
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">Document 2</label>
+            <select id="compareDocB" class="w-full mt-1 bg-[#050914] border border-gray-800 rounded p-2 text-xs text-gray-200"></select>
+          </div>
+          <div>
+            <label class="text-[11px] text-gray-400">Comparison Query</label>
+            <textarea id="compareQuery" rows="3" placeholder="Compare methodology and model performance..." class="w-full mt-1 bg-[#050914] border border-gray-800 rounded p-2 text-xs text-gray-200"></textarea>
+          </div>
+          <button onclick="runCompare()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2 rounded text-xs font-semibold text-white">
+            Run Comparative Analysis
+          </button>
+        </div>
+        <div class="col-span-8 neon-panel p-4 rounded-xl flex flex-col">
+          <h3 class="text-xs font-semibold text-gray-300 uppercase mb-3">Saved Comparisons & History</h3>
+          <div id="compareHistoryContainer" class="flex-1 overflow-y-auto space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: Ingestion & OCR -->
+      <section id="view-ingestion" class="hidden max-w-xl mx-auto neon-panel p-6 rounded-xl space-y-5">
+        <h3 class="text-sm font-semibold text-pink-400 uppercase">Document & OCR Ingestion</h3>
+        <p class="text-xs text-gray-400">Upload documents or scanned PDFs. Chunks will be indexed in SQLite and immediately made available in the Knowledge Base.</p>
+        <div class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center bg-[#050914]">
+          <input type="file" id="fileUploadInput" class="hidden" onchange="uploadSelectedFile(this)">
+          <label for="fileUploadInput" class="cursor-pointer flex flex-col items-center">
+            <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
+            <span class="text-xs text-indigo-300 font-medium">Click to select PDF or image</span>
+            <span class="text-[10px] text-gray-500 mt-1">Supports PDF, PNG, JPG, TXT</span>
+          </label>
+        </div>
+        <div id="uploadStatus" class="text-xs text-center text-gray-400"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Bottom Right Floating Button for Global AI -->
+  <div class="fixed bottom-6 right-6">
+    <button onclick="toggleGlobalAI()" class="bg-gradient-to-r from-cyan-500 to-indigo-600 text-white rounded-full px-4 py-3 shadow-2xl flex items-center gap-2 text-xs font-bold hover:scale-105 transition">
+      <i class="fa-solid fa-globe text-base"></i> Global AI (ChatGPT)
+    </button>
+  </div>
+
+  <!-- Global AI Full Screen Modal -->
+  <div id="globalAiModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+    <div class="w-full max-w-5xl h-[85vh] bg-[#070b16] border border-gray-800 rounded-2xl flex overflow-hidden shadow-2xl">
+      <div class="w-64 border-r border-gray-800 bg-[#050811] p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-xs font-bold text-gray-300 uppercase">Chat History</span>
+            <button onclick="startNewGlobalChat()" class="text-xs text-indigo-400 hover:text-indigo-300"><i class="fa-solid fa-plus"></i></button>
+          </div>
+          <div id="globalHistoryList" class="space-y-1.5 overflow-y-auto max-h-[60vh]"></div>
+        </div>
+        <button onclick="toggleGlobalAI()" class="text-xs text-gray-500 hover:text-gray-300 text-left">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back to Workspace
+        </button>
+      </div>
+
+      <div class="flex-1 flex flex-col justify-between bg-[#080d1a]">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-xs font-semibold text-gray-200">Global AI Assistant (Realtime Web + LLM)</span>
+          </div>
+          <button onclick="toggleGlobalAI()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="globalChatContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div class="text-xs text-gray-400 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+            👋 I am your Global AI assistant. I can solve queries worldwide without being restricted to local datasets.
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-800 bg-[#060a14] flex gap-2">
+          <input id="globalInput" type="text" placeholder="Ask anything worldwide (like ChatGPT)..." 
+                 class="flex-1 bg-[#090f20] border border-gray-700 text-xs rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:border-indigo-500"
+                 onkeydown="if(event.key==='Enter') sendGlobalQuery()">
+          <button onclick="sendGlobalQuery()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-xs font-medium text-white">
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    function switchView(viewName) {
+      ['workspace', 'kb', 'compare', 'ingestion'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`btn-${v}`);
+        if (el) el.classList.add('hidden');
+        if (btn) btn.classList.remove('active-nav');
+      });
+
+      document.getElementById(`view-${viewName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${viewName}`);
+      if (activeBtn) activeBtn.classList.add('active-nav');
+
+      if (viewName === 'kb') loadKnowledgeBase();
+      if (viewName === 'compare') loadCompareDropdowns();
+    }
+
+    async function loadDatasets() {
+      try {
+        const res = await fetch(`${API_BASE}/datasets`);
+        const data = await res.json();
+        const select = document.getElementById('activeDatasetSelect');
+        
+        select.innerHTML = '<option value="">-- Select Active Dataset --</option><option value="ALL">📊 All Datasets (Global Knowledge Base)</option>';
+        data.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.name;
+          opt.innerText = `📄 ${d.name}`;
+          select.appendChild(opt);
+        });
+
+        // Set default to distorted.pdf or first available
+        const foundDistorted = data.find(d => d.name.toLowerCase().includes('distorted'));
+        if (foundDistorted) {
+          select.value = foundDistorted.name;
+        } else if (data.length > 0) {
+          select.value = data[0].name;
+        }
+      } catch (err) {
+        console.error("API error loading datasets:", err);
+      }
+    }
+
+    async function loadKnowledgeBase() {
+      const listContainer = document.getElementById('datasetListContainer');
+      listContainer.innerHTML = '<p class="text-xs text-gray-500">Loading datasets...</p>';
+      try {
+        const res = await fetch(`${API_BASE}/datasets`);
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          listContainer.innerHTML = '<p class="text-xs text-gray-500">No datasets indexed in SQLite. Click Sync or upload one.</p>';
+          return;
+        }
+
+        listContainer.innerHTML = data.map(d => `
+          <div onclick="selectKBDoc('${d.name}')" class="p-3 rounded-lg bg-[#090f20] border border-gray-800 hover:border-indigo-500 cursor-pointer text-xs flex justify-between items-center transition">
+            <div class="flex items-center gap-2 truncate">
+              <i class="fa-solid fa-file-pdf text-red-400"></i>
+              <span class="text-gray-200 font-medium truncate">${d.name}</span>
+            </div>
+            <span class="text-[10px] text-gray-500 bg-gray-800/80 px-2 py-0.5 rounded">${d.total_pages || 1} pgs</span>
+          </div>
+        `).join('');
+
+        // Preload first dataset's history
+        if (data.length > 0) {
+          selectKBDoc(data[0].name);
+        }
+      } catch (e) {
+        listContainer.innerHTML = `<p class="text-xs text-rose-500">Error: ${e.message}</p>`;
+      }
+    }
+
+    async function selectKBDoc(datasetName) {
+      document.getElementById('kbHistoryTitle').innerText = `History for: ${datasetName}`;
+      const container = document.getElementById('kbHistoryContainer');
+      container.innerHTML = '<p class="text-xs text-gray-400">Loading chat logs...</p>';
+
+      try {
+        const res = await fetch(`${API_BASE}/datasets/${datasetName}/history`);
+        const logs = await res.json();
+
+        if (!logs || !logs.length) {
+          container.innerHTML = `<div class="text-xs text-gray-500 p-4 bg-[#050914] rounded-lg border border-gray-800">No query history recorded for <b>${datasetName}</b> yet. Try asking a question from the Research Workspace!</div>`;
+          return;
+        }
+
+        container.innerHTML = logs.map(l => `
+          <div class="p-4 bg-[#050914] border border-gray-800 rounded-lg space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-indigo-400 font-semibold flex items-center gap-1.5">
+                <i class="fa-regular fa-circle-question"></i> ${l.user_query}
+              </span>
+              <span class="text-[10px] text-gray-600">${l.timestamp}</span>
+            </div>
+            <p class="text-gray-300 pl-4 border-l-2 border-indigo-500/40">${l.ai_response}</p>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<p class="text-xs text-rose-500">Failed to load history: ${e.message}</p>`;
+      }
+    }
+
+    async function syncLocalFolder() {
+      try {
+        const res = await fetch(`${API_BASE}/datasets/sync`);
+        const d = await res.json();
+        alert(`Synchronized! Indexed chunks: ${d.total_indexed_chunks}`);
+        loadDatasets();
+        loadKnowledgeBase();
+      } catch (e) {
+        alert(`Sync error: ${e.message}`);
+      }
+    }
+
+    async function runRAGSearch() {
+      const query = document.getElementById('ragQueryInput').value.trim();
+      const activeDataset = document.getElementById('activeDatasetSelect').value;
+      const ansBox = document.getElementById('groundedAnswerBox');
+      const sourceTag = document.getElementById('responseSourceTag');
+      const traceContainer = document.getElementById('traceLogContainer');
+      const fallbackModal = document.getElementById('fallbackModal');
+
+      fallbackModal.classList.add('hidden');
+
+      if (!query) return;
+
+      if (!activeDataset) {
+        ansBox.innerHTML = `<span class="text-amber-400 font-semibold">Please select a dataset from the top right selector or switch to our Global AI.</span>`;
+        sourceTag.innerText = "Error: No Dataset Selected";
+        return;
+      }
+
+      ansBox.innerHTML = `<span class="text-gray-400 animate-pulse">Running Planner & Retrievers...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/rag/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, active_dataset: activeDataset })
+        });
+        const data = await res.json();
+
+        if (data.trace) {
+          traceContainer.innerHTML = data.trace.map(t => `
+            <div>
+              <p class="text-indigo-400 font-semibold">[${t.agent}]</p>
+              <p class="text-gray-400 text-[11px]">${t.message}</p>
+            </div>
+          `).join('');
+        }
+
+        if (data.found_in_dataset) {
+          ansBox.innerText = data.answer;
+          sourceTag.innerText = data.sources && data.sources.length ? data.sources.join(', ') : "Grounded Context";
+        } else {
+          ansBox.innerText = "Answer is not present in the selected dataset.";
+          sourceTag.innerText = "No local grounded match";
+          fallbackModal.classList.remove('hidden');
+        }
+      } catch (err) {
+        ansBox.innerText = "Error executing RAG agent: " + err.message;
+      }
+    }
+
+    async function loadCompareDropdowns() {
+      const res = await fetch(`${API_BASE}/datasets`);
+      const data = await res.json();
+      const sA = document.getElementById('compareDocA');
+      const sB = document.getElementById('compareDocB');
+      sA.innerHTML = ''; sB.innerHTML = '';
+      data.forEach(d => {
+        sA.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+        sB.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+      });
+      loadCompareHistory();
+    }
+
+    async function runCompare() {
+      const doc_a = document.getElementById('compareDocA').value;
+      const doc_b = document.getElementById('compareDocB').value;
+      const query = document.getElementById('compareQuery').value;
+      const container = document.getElementById('compareHistoryContainer');
+
+      container.innerHTML = `<p class="text-xs text-gray-400">Comparing ${doc_a} and ${doc_b}...</p>`;
+
+      await fetch(`${API_BASE}/compare/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_a, doc_b, query })
+      });
+      loadCompareHistory();
+    }
+
+    async function loadCompareHistory() {
+      const container = document.getElementById('compareHistoryContainer');
+      const res = await fetch(`${API_BASE}/compare/history`);
+      const data = await res.json();
+      if (!data.length) {
+        container.innerHTML = `<p class="text-xs text-gray-500">No comparison sessions run yet.</p>`;
+        return;
+      }
+      container.innerHTML = data.map(c => `
+        <div class="p-3 bg-[#050914] border border-gray-800 rounded-lg text-xs space-y-1">
+          <div class="text-[11px] text-emerald-400 font-semibold">${c.dataset_name}</div>
+          <div class="text-gray-300 font-medium">Q: ${c.user_query}</div>
+          <div class="text-gray-400 mt-1">${c.ai_response}</div>
+        </div>
+      `).join('');
+    }
+
+    async function uploadSelectedFile(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const status = document.getElementById('uploadStatus');
+      status.innerText = `Ingesting & indexing ${file.name}...`;
+
+      try {
+        const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        status.innerHTML = `<span class="text-emerald-400">Successfully indexed ${data.filename}!</span>`;
+        loadDatasets();
+        loadKnowledgeBase();
+      } catch (err) {
+        status.innerHTML = `<span class="text-rose-500">Upload failed: ${err.message}</span>`;
+      }
+    }
+
+    function toggleGlobalAI() {
+      const modal = document.getElementById('globalAiModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        loadGlobalHistory();
+      }
+    }
+
+    function switchToGlobalWithQuery() {
+      const query = document.getElementById('ragQueryInput').value;
+      toggleGlobalAI();
+      document.getElementById('globalInput').value = query;
+      sendGlobalQuery();
+    }
+
+    async function loadGlobalHistory() {
+      const res = await fetch(`${API_BASE}/global-ai/history`);
+      const logs = await res.json();
+      const list = document.getElementById('globalHistoryList');
+      list.innerHTML = logs.map(l => `
+        <div class="p-2 rounded bg-gray-900/60 border border-gray-800 hover:border-indigo-500 cursor-pointer text-[11px] truncate text-gray-300" onclick="viewGlobalLog('${escape(l.user_query)}', '${escape(l.ai_response)}')">
+          ${l.user_query}
+        </div>
+      `).join('');
+    }
+
+    function viewGlobalLog(query, answer) {
+      const chat = document.getElementById('globalChatContainer');
+      chat.innerHTML += `
+        <div class="text-right"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${unescape(query)}</span></div>
+        <div class="text-left"><span class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-3 rounded-lg text-xs max-w-xl">${unescape(answer)}</span></div>
+      `;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function sendGlobalQuery() {
+      const input = document.getElementById('globalInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const chat = document.getElementById('globalChatContainer');
+      chat.innerHTML += `<div class="text-right"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${q}</span></div>`;
+      input.value = '';
+      chat.scrollTop = chat.scrollHeight;
+
+      const res = await fetch(`${API_BASE}/global-ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      });
+      const data = await res.json();
+
+      chat.innerHTML += `
+        <div class="text-left">
+          <div class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-3 rounded-lg text-xs max-w-xl">
+            <p class="leading-relaxed">${data.answer}</p>
+            ${data.web_sources && data.web_sources.length ? `<div class="mt-2 pt-2 border-t border-gray-800 text-[10px] text-cyan-400">Sources: ${data.web_sources.map(s => s.title).join(', ')}</div>` : ''}
+          </div>
+        </div>
+      `;
+      chat.scrollTop = chat.scrollHeight;
+      loadGlobalHistory();
+    }
+
+    function startNewGlobalChat() {
+      document.getElementById('globalChatContainer').innerHTML = `
+        <div class="text-xs text-gray-400 bg-gray-900/50 p-3 rounded-lg border border-gray-800">
+          New Global AI Session initialized.
+        </div>
+      `;
+    }
+
+    window.onload = () => {
+      loadDatasets();
+    };
+  </script>
+</body>
+</html>
