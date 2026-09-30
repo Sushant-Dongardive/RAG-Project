@@ -1,87 +1,112 @@
+import pickle
 import re
+from pathlib import Path
 from rank_bm25 import BM25Okapi
-from vector_retriever import VectorStore
 from sentence_transformers import CrossEncoder
-from config import RRF_K
+from vector_retriever import VectorStore
+
+BM25_CACHE = Path(__file__).resolve().parent / "bm25_cache.pkl"
+
+
+def tokenize(text: str):
+    return re.findall(r"\w+", (text or "").lower())
+
 
 class HybridRetriever:
-    def __init__(self):
-        self.vector_store = VectorStore()
-        self.corpus_chunks = []
-        self.bm25 = None
-        # Lightweight, high-precision cross-encoder for re-ranking
-        try:
-            self.reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-            print("[Retriever] Cross-Encoder Re-Ranker loaded.")
-        except Exception as e:
-            print(f"[Retriever Warning] Re-ranker offline: {e}")
-            self.reranker = None
+    _instance = None
 
-    def build_bm25(self, all_chunks: list):
-        self.corpus_chunks = all_chunks
-        tokenized = [self._tokenize(c["content"]) for c in all_chunks]
-        if tokenized and any(len(t) > 0 for t in tokenized):
-            self.bm25 = BM25Okapi(tokenized)
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(HybridRetriever, cls).__new__(cls)
+            cls._instance.vector_store = VectorStore()
+            cls._instance.reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+            cls._instance.bm25 = None
+            cls._instance.corpus_chunks = []
+            cls._instance.load_bm25()
+        return cls._instance
 
-    def _tokenize(self, text: str):
-        return [w.lower() for w in re.findall(r"\w+", str(text)) if len(w) > 1]
+    def build_bm25(self, chunks: list, force_rebuild: bool = True):
+        self.corpus_chunks = chunks
+        if not chunks:
+            self.bm25 = None
+            if BM25_CACHE.exists():
+                BM25_CACHE.unlink()
+            return
+
+        tokenized_corpus = [tokenize(c.get("content", "")) for c in chunks]
+        self.bm25 = BM25Okapi(tokenized_corpus)
+
+        if force_rebuild:
+            with open(BM25_CACHE, "wb") as f:
+                pickle.dump({"bm25": self.bm25, "chunks": self.corpus_chunks}, f)
+            print(f"[Retriever] Loaded BM25 index from cache ({len(chunks)} chunks).")
+
+    def load_bm25(self):
+        if BM25_CACHE.exists():
+            try:
+                with open(BM25_CACHE, "rb") as f:
+                    data = pickle.load(f)
+                    self.bm25 = data["bm25"]
+                    self.corpus_chunks = data["chunks"]
+            except Exception:
+                self.bm25 = None
+                self.corpus_chunks = []
+
+    def remove_document(self, filename: str):
+        target = filename.strip().lower()
+        remaining = [
+            c for c in self.corpus_chunks
+            if (c.get("filename") or c.get("dataset_name", "")).strip().lower() != target
+        ]
+        self.build_bm25(remaining, force_rebuild=True)
 
     def search(self, query: str, top_k: int = 4, filter_dataset: str = None):
-        # 1. Fetch wider candidate pool (top 10 dense + top 10 sparse)
-        dense_results = self.vector_store.search(query, top_k=10, filter_dataset=filter_dataset)
-        
+        dense_results = self.vector_store.search(query, top_k=top_k * 2, filter_dataset=filter_dataset)
+
         bm25_results = []
         if self.bm25 and self.corpus_chunks:
-            tokens = self._tokenize(query)
-            if tokens:
-                scores = self.bm25.get_scores(tokens)
-                sorted_idx = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
-                for idx in sorted_idx:
-                    chunk = self.corpus_chunks[idx]
-                    if filter_dataset and filter_dataset != "ALL" and chunk["dataset_name"].strip().lower() != filter_dataset.strip().lower():
+            tokens = tokenize(query)
+            scores = self.bm25.get_scores(tokens)
+            ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k * 4]
+
+            for idx in ranked_indices:
+                if scores[idx] <= 0:
+                    continue
+                c = self.corpus_chunks[idx]
+                if filter_dataset and filter_dataset != "ALL" and filter_dataset != "All Datasets (Global Knowledge Base)":
+                    target = filter_dataset.strip().lower()
+                    doc_name = str(c.get("dataset_name", "")).strip().lower()
+                    file_name = str(c.get("filename", "")).strip().lower()
+                    if target != doc_name and target != file_name:
                         continue
-                    if scores[idx] > 0:
-                        bm25_results.append({
-                            "chunk_id": chunk["id"],
-                            "content": chunk["content"],
-                            "dataset_name": chunk["dataset_name"],
-                            "page": chunk["page"],
-                            "score": float(scores[idx])
-                        })
-                    if len(bm25_results) >= 10:
-                        break
+                bm25_results.append({
+                    "chunk_id": c.get("id"),
+                    "content": c.get("content"),
+                    "dataset_name": c.get("dataset_name") or c.get("filename", "UNKNOWN"),
+                    "page": c.get("page", 1),
+                    "score": float(scores[idx])
+                })
+                if len(bm25_results) >= top_k * 2:
+                    break
 
-        # 2. Reciprocal Rank Fusion (RRF)
-        rrf_scores = {}
-        item_map = {}
+        # Pool & Deduplicate
+        seen = set()
+        pool = []
+        for item in dense_results + bm25_results:
+            key = (item.get("content", ""))[:120].strip()
+            if key not in seen:
+                seen.add(key)
+                pool.append(item)
 
-        for rank, item in enumerate(dense_results):
-            cid = item["chunk_id"]
-            item_map[cid] = item
-            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (RRF_K + rank + 1))
+        if not pool:
+            return [], dense_results, bm25_results
 
-        for rank, item in enumerate(bm25_results):
-            cid = item["chunk_id"]
-            item_map[cid] = item
-            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (RRF_K + rank + 1))
+        # Cross-Encoder Reranking
+        pairs = [[query, item["content"]] for item in pool[:8]]
+        rerank_scores = self.reranker.predict(pairs, batch_size=8, show_progress_bar=False)
 
-        # Fallback to general chunks if pool is empty
-        if not item_map:
-            filtered = [c for c in self.corpus_chunks if not filter_dataset or filter_dataset == "ALL" or c["dataset_name"].strip().lower() == filter_dataset.strip().lower()]
-            for c in filtered[:10]:
-                item_map[c["id"]] = c
-                rrf_scores[c["id"]] = 0.1
+        for i, score in enumerate(rerank_scores):
+            pool[i]["rerank_score"] = float(score)
 
-        sorted_candidates = [item_map[cid] for cid, _ in sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:10]]
-
-        # 3. Neural Cross-Encoder Re-Ranking Step
-        if self.reranker and sorted_candidates:
-            pairs = [[query, c["content"]] for c in sorted_candidates]
-            cross_scores = self.reranker.predict(pairs)
-            for idx, score in enumerate(cross_scores):
-                sorted_candidates[idx]["cross_score"] = float(score)
-            
-            sorted_candidates.sort(key=lambda x: x.get("cross_score", 0), reverse=True)
-
-        final_results = sorted_candidates[:top_k]
-        return final_results, dense_results, bm25_results
+        pool = sorted(pool[:len(rerank_scores)], key=lambda x: x["rerank_score"], reverse=True)
+        return pool[:top_k], dense_results, bm25_results

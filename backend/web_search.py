@@ -1,7 +1,7 @@
 import urllib.request
 import json
 import urllib.parse
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 def search_global_web(query: str, max_results: int = 4):
     results = []

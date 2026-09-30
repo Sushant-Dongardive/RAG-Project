@@ -1,128 +1,158 @@
 import sqlite3
-import json
-from datetime import datetime
-from config import DB_PATH
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parent / "rag_knowledge.db"
+
 
 def get_connection():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(DB_PATH), timeout=30.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=30000;")
     return conn
 
+
 def init_db():
-    with get_connection() as conn:
+    """Initializes tables using the standardized document_chunks schema."""
+    conn = get_connection()
+    try:
+        with conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS datasets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE,
+                    file_path TEXT,
+                    file_type TEXT,
+                    total_pages INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS document_chunks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    dataset_id INTEGER,
+                    dataset_name TEXT,
+                    page_number INTEGER,
+                    chunk_index INTEGER,
+                    content TEXT,
+                    FOREIGN KEY (dataset_id) REFERENCES datasets(id) ON DELETE CASCADE
+                );
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS chat_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    dataset_name TEXT,
+                    session_type TEXT,
+                    user_query TEXT,
+                    ai_response TEXT,
+                    sources TEXT,
+                    agent_trace TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+    finally:
+        conn.close()
+
+
+def store_chunk(chunk_id: str, filename: str, page: int, chunk_text: str):
+    """Compatibility insert helper for individual chunks."""
+    conn = get_connection()
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM datasets WHERE name = ?", (filename,))
+            row = cursor.fetchone()
+            ds_id = row["id"] if row else 1
+            cursor.execute(
+                """
+                INSERT INTO document_chunks (dataset_id, dataset_name, page_number, chunk_index, content)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (ds_id, filename, page, 0, chunk_text)
+            )
+    finally:
+        conn.close()
+
+
+def delete_document_chunks(filename: str) -> int:
+    """Deletes chunks and dataset entries matching filename."""
+    conn = get_connection()
+    purged_count = 0
+    try:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM document_chunks WHERE dataset_name = ?", (filename,))
+            purged_count = cursor.fetchone()[0]
+            cursor.execute("DELETE FROM document_chunks WHERE dataset_name = ?", (filename,))
+            cursor.execute("DELETE FROM datasets WHERE name = ?", (filename,))
+            cursor.execute("DELETE FROM chat_history WHERE dataset_name = ?", (filename,))
+    finally:
+        conn.close()
+    return purged_count
+
+
+def save_chat_message(dataset_name: str, session_type: str, user_query: str, ai_response: str, sources: list, agent_trace: list):
+    import json
+    conn = get_connection()
+    try:
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO chat_history (dataset_name, session_type, user_query, ai_response, sources, agent_trace)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    dataset_name,
+                    session_type,
+                    user_query,
+                    ai_response,
+                    json.dumps(sources),
+                    json.dumps(agent_trace)
+                )
+            )
+    finally:
+        conn.close()
+
+
+def get_chats_by_dataset(dataset_name: str):
+    import json
+    conn = get_connection()
+    try:
         cursor = conn.cursor()
-        
-        # Datasets / Documents registry
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS datasets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
-                file_path TEXT NOT NULL DEFAULT '',
-                file_type TEXT NOT NULL DEFAULT 'pdf',
-                total_pages INTEGER DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+        cursor.execute(
+            "SELECT * FROM chat_history WHERE dataset_name = ? ORDER BY timestamp DESC LIMIT 20",
+            (dataset_name,)
+        )
+        rows = cursor.fetchall()
+        result = []
+        for r in rows:
+            result.append({
+                "id": r["id"],
+                "dataset_name": r["dataset_name"],
+                "session_type": r["session_type"],
+                "user_query": r["user_query"],
+                "ai_response": r["ai_response"],
+                "sources": json.loads(r["sources"]) if r["sources"] else [],
+                "agent_trace": json.loads(r["agent_trace"]) if r["agent_trace"] else [],
+                "timestamp": r["timestamp"]
+            })
+        return result
+    finally:
+        conn.close()
 
-        # Auto-migration in case an old table exists without these columns
-        cursor.execute("PRAGMA table_info(datasets)")
-        existing_cols = [row["name"] for row in cursor.fetchall()]
-        if "file_path" not in existing_cols:
-            cursor.execute("ALTER TABLE datasets ADD COLUMN file_path TEXT DEFAULT ''")
-        if "file_type" not in existing_cols:
-            cursor.execute("ALTER TABLE datasets ADD COLUMN file_type TEXT DEFAULT 'pdf'")
-        if "total_pages" not in existing_cols:
-            cursor.execute("ALTER TABLE datasets ADD COLUMN total_pages INTEGER DEFAULT 1")
-        
-        # Chunks table with grounding references
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS document_chunks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                dataset_id INTEGER NOT NULL,
-                dataset_name TEXT NOT NULL,
-                page_number INTEGER NOT NULL,
-                chunk_index INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                FOREIGN KEY (dataset_id) REFERENCES datasets (id) ON DELETE CASCADE
-            )
-        """)
-
-        # Chat history per dataset & global mode
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                dataset_name TEXT,
-                session_type TEXT DEFAULT 'rag',
-                user_query TEXT NOT NULL,
-                ai_response TEXT NOT NULL,
-                sources TEXT,
-                agent_trace TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        # Multi-Paper comparison conversations
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS compare_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_name TEXT NOT NULL,
-                doc_a TEXT NOT NULL,
-                doc_b TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        conn.commit()
-
-def save_chat_message(dataset_name, session_type, user_query, ai_response, sources=None, agent_trace=None):
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO chat_history (dataset_name, session_type, user_query, ai_response, sources, agent_trace)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            dataset_name,
-            session_type,
-            user_query,
-            ai_response,
-            json.dumps(sources or []),
-            json.dumps(agent_trace or [])
-        ))
-        conn.commit()
-
-def get_chats_by_dataset(dataset_name):
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM chat_history 
-            WHERE dataset_name = ? AND session_type = 'rag'
-            ORDER BY timestamp DESC
-        """, (dataset_name,))
-        return [dict(row) for row in cursor.fetchall()]
 
 def get_all_global_chats():
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM chat_history 
-            WHERE session_type = 'global_ai'
-            ORDER BY timestamp DESC
-        """, ())
-        return [dict(row) for row in cursor.fetchall()]
+    return get_chats_by_dataset("Global_Web")
 
-def get_compare_chats(doc_a=None, doc_b=None):
-    with get_connection() as conn:
+
+def get_compare_chats():
+    conn = get_connection()
+    try:
         cursor = conn.cursor()
-        if doc_a and doc_b:
-            cursor.execute("""
-                SELECT * FROM chat_history 
-                WHERE session_type = 'compare' AND (dataset_name = ? OR dataset_name = ?)
-                ORDER BY timestamp ASC
-            """, (f"{doc_a} vs {doc_b}", f"{doc_b} vs {doc_a}"))
-        else:
-            cursor.execute("""
-                SELECT * FROM chat_history 
-                WHERE session_type = 'compare'
-                ORDER BY timestamp DESC
-            """)
-        return [dict(row) for row in cursor.fetchall()]
+        cursor.execute("SELECT * FROM chat_history WHERE session_type = 'compare' ORDER BY timestamp DESC LIMIT 20")
+        return [dict(r) for r in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+init_db()

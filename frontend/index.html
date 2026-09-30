@@ -5,6 +5,8 @@
   <title>Agentic RAG Engine | Capstone 2026</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Markdown Parser for ChatGPT/Gemini style rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body { background-color: #05070e; color: #d1d5db; font-family: ui-sans-serif, system-ui, sans-serif; }
@@ -14,6 +16,81 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #05070e; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+    /* Markdown Formatted Typography for AI Responses */
+    .markdown-content {
+      line-height: 1.6;
+      font-size: 0.875rem;
+      color: #e2e8f0;
+    }
+    .markdown-content p {
+      margin-bottom: 0.65rem;
+    }
+    .markdown-content p:last-child {
+      margin-bottom: 0;
+    }
+    .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+      font-weight: 700;
+      color: #ffffff;
+      margin-top: 1rem;
+      margin-bottom: 0.35rem;
+    }
+    .markdown-content h1 { font-size: 1.15rem; }
+    .markdown-content h2 { font-size: 1.05rem; }
+    .markdown-content h3 { font-size: 0.95rem; }
+    .markdown-content ul {
+      list-style-type: disc;
+      margin-left: 1.25rem;
+      margin-bottom: 0.65rem;
+    }
+    .markdown-content ol {
+      list-style-type: decimal;
+      margin-left: 1.25rem;
+      margin-bottom: 0.65rem;
+    }
+    .markdown-content li {
+      margin-bottom: 0.25rem;
+    }
+    .markdown-content strong {
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content hr {
+      border: 0;
+      border-top: 1px solid #1e293b;
+      margin: 0.85rem 0;
+    }
+    .markdown-content code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+    }
+    .markdown-content pre {
+      background: #040711;
+      border: 1px solid #1e293b;
+      padding: 0.75rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-bottom: 0.65rem;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0.75rem;
+      font-size: 0.8rem;
+    }
+    .markdown-content th, .markdown-content td {
+      border: 1px solid #1e293b;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .markdown-content th {
+      background-color: #0b1329;
+      color: #38bdf8;
+    }
   </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -97,7 +174,7 @@
               <span id="responseSourceTag" class="text-[11px] text-gray-500 font-mono">distorted.pdf (Page 8)</span>
             </div>
             
-            <div id="groundedAnswerBox" class="text-sm text-gray-200 leading-relaxed font-light">
+            <div id="groundedAnswerBox" class="text-sm text-gray-200 leading-relaxed font-light markdown-content">
               According to Table 3, the accuracy of the cost-sensitive classifier is 96%.
             </div>
 
@@ -190,13 +267,13 @@
       <!-- VIEW 4: Ingestion & OCR -->
       <section id="view-ingestion" class="hidden max-w-xl mx-auto neon-panel p-6 rounded-xl space-y-5">
         <h3 class="text-sm font-semibold text-pink-400 uppercase">Document & OCR Ingestion</h3>
-        <p class="text-xs text-gray-400">Upload documents or scanned PDFs. Chunks will be indexed in SQLite and immediately made available in the Knowledge Base.</p>
+        <p class="text-xs text-gray-400">Upload documents or spreadsheets. Content is converted to structured Markdown tables, indexed in SQLite/FAISS, and immediately ready for search.</p>
         <div class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center bg-[#050914]">
-          <input type="file" id="fileUploadInput" class="hidden" onchange="uploadSelectedFile(this)">
+          <input type="file" id="fileUploadInput" accept=".pdf,.docx,.doc,.csv,.xlsx,.xls,.txt,.md" class="hidden" onchange="uploadSelectedFile(this)">
           <label for="fileUploadInput" class="cursor-pointer flex flex-col items-center">
             <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
-            <span class="text-xs text-indigo-300 font-medium">Click to select PDF or image</span>
-            <span class="text-[10px] text-gray-500 mt-1">Supports PDF, PNG, JPG, TXT</span>
+            <span class="text-xs text-indigo-300 font-medium">Click to select Document, PDF, or Sheet</span>
+            <span class="text-[10px] text-gray-500 mt-1">Supports PDF, DOCX, CSV, XLSX, TXT, MD</span>
           </label>
         </div>
         <div id="uploadStatus" class="text-xs text-center text-gray-400"></div>
@@ -258,6 +335,11 @@
   <script>
     const API_BASE = "http://127.0.0.1:8000";
 
+    function renderMarkdown(content) {
+      if (!content) return "";
+      return (window.marked && marked.parse) ? marked.parse(content) : content;
+    }
+
     function switchView(viewName) {
       ['workspace', 'kb', 'compare', 'ingestion'].forEach(v => {
         const el = document.getElementById(`view-${v}`);
@@ -279,6 +361,7 @@
         const res = await fetch(`${API_BASE}/datasets`);
         const data = await res.json();
         const select = document.getElementById('activeDatasetSelect');
+        const currentVal = select.value;
         
         select.innerHTML = '<option value="">-- Select Active Dataset --</option><option value="ALL">📊 All Datasets (Global Knowledge Base)</option>';
         data.forEach(d => {
@@ -288,12 +371,18 @@
           select.appendChild(opt);
         });
 
-        // Set default to distorted.pdf or first available
-        const foundDistorted = data.find(d => d.name.toLowerCase().includes('distorted'));
-        if (foundDistorted) {
-          select.value = foundDistorted.name;
-        } else if (data.length > 0) {
-          select.value = data[0].name;
+        // Retain current selection if it still exists
+        if (data.some(d => d.name === currentVal)) {
+          select.value = currentVal;
+        } else {
+          const foundDistorted = data.find(d => d.name.toLowerCase().includes('distorted'));
+          if (foundDistorted) {
+            select.value = foundDistorted.name;
+          } else if (data.length > 0) {
+            select.value = data[0].name;
+          } else {
+            select.value = "";
+          }
         }
       } catch (err) {
         console.error("API error loading datasets:", err);
@@ -309,25 +398,55 @@
 
         if (!data || data.length === 0) {
           listContainer.innerHTML = '<p class="text-xs text-gray-500">No datasets indexed in SQLite. Click Sync or upload one.</p>';
+          document.getElementById('kbHistoryContainer').innerHTML = '<p class="text-xs text-gray-500">No datasets found.</p>';
           return;
         }
 
         listContainer.innerHTML = data.map(d => `
-          <div onclick="selectKBDoc('${d.name}')" class="p-3 rounded-lg bg-[#090f20] border border-gray-800 hover:border-indigo-500 cursor-pointer text-xs flex justify-between items-center transition">
-            <div class="flex items-center gap-2 truncate">
-              <i class="fa-solid fa-file-pdf text-red-400"></i>
+          <div class="group p-2.5 rounded-lg bg-[#090f20] border border-gray-800 hover:border-indigo-500 cursor-pointer text-xs flex justify-between items-center transition" onclick="selectKBDoc('${d.name}')">
+            <div class="flex items-center gap-2 truncate flex-1 mr-2">
+              <i class="fa-solid fa-file-lines text-indigo-400"></i>
               <span class="text-gray-200 font-medium truncate">${d.name}</span>
             </div>
-            <span class="text-[10px] text-gray-500 bg-gray-800/80 px-2 py-0.5 rounded">${d.total_pages || 1} pgs</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-gray-400 bg-gray-800/80 px-2 py-0.5 rounded">${d.total_pages || 1} pgs</span>
+              <button onclick="event.stopPropagation(); deleteDataset('${d.name}')" 
+                      title="Delete Dataset" 
+                      class="text-gray-500 hover:text-rose-400 p-1.5 rounded transition">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
           </div>
         `).join('');
 
-        // Preload first dataset's history
         if (data.length > 0) {
           selectKBDoc(data[0].name);
         }
       } catch (e) {
         listContainer.innerHTML = `<p class="text-xs text-rose-500">Error: ${e.message}</p>`;
+      }
+    }
+
+    async function deleteDataset(filename) {
+      if (!confirm(`Are you sure you want to permanently delete "${filename}" from SQLite and vector indices?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(filename)}`, {
+          method: 'DELETE'
+        });
+        const resData = await res.json();
+
+        if (res.ok) {
+          alert(`Document "${filename}" deleted successfully.`);
+          loadDatasets();
+          loadKnowledgeBase();
+        } else {
+          alert(`Error deleting document: ${resData.detail || "Server error"}`);
+        }
+      } catch (err) {
+        alert(`Failed to delete document: ${err.message}`);
       }
     }
 
@@ -353,7 +472,7 @@
               </span>
               <span class="text-[10px] text-gray-600">${l.timestamp}</span>
             </div>
-            <p class="text-gray-300 pl-4 border-l-2 border-indigo-500/40">${l.ai_response}</p>
+            <div class="text-gray-300 pl-4 border-l-2 border-indigo-500/40 markdown-content">${renderMarkdown(l.ai_response)}</div>
           </div>
         `).join('');
       } catch (e) {
@@ -373,13 +492,17 @@
       }
     }
 
-    async function runRAGSearch() {
-      const query = document.getElementById('ragQueryInput').value.trim();
+      async function runRAGSearch() {
+      const queryInput = document.getElementById('ragQueryInput');
+      const query = queryInput.value.trim();
       const activeDataset = document.getElementById('activeDatasetSelect').value;
       const ansBox = document.getElementById('groundedAnswerBox');
       const sourceTag = document.getElementById('responseSourceTag');
       const traceContainer = document.getElementById('traceLogContainer');
       const fallbackModal = document.getElementById('fallbackModal');
+      
+      // Grab the submit button
+      const executeBtn = document.querySelector("button[onclick='runRAGSearch()']");
 
       fallbackModal.classList.add('hidden');
 
@@ -391,7 +514,17 @@
         return;
       }
 
-      ansBox.innerHTML = `<span class="text-gray-400 animate-pulse">Running Planner & Retrievers...</span>`;
+      // --- 1. LOCK UI & SHOW PROGRESS ---
+      executeBtn.disabled = true;
+      executeBtn.classList.add("opacity-50", "cursor-not-allowed");
+      executeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Processing...`;
+      
+      ansBox.innerHTML = `
+        <div class="flex items-center gap-3 text-cyan-400 py-4">
+          <i class="fa-solid fa-circle-notch fa-spin text-lg"></i>
+          <span>Retrieving, reranking, and synthesizing answer... please wait.</span>
+        </div>
+      `;
 
       try {
         const res = await fetch(`${API_BASE}/rag/execute`, {
@@ -411,7 +544,7 @@
         }
 
         if (data.found_in_dataset) {
-          ansBox.innerText = data.answer;
+          ansBox.innerHTML = renderMarkdown(data.answer);
           sourceTag.innerText = data.sources && data.sources.length ? data.sources.join(', ') : "Grounded Context";
         } else {
           ansBox.innerText = "Answer is not present in the selected dataset.";
@@ -420,6 +553,11 @@
         }
       } catch (err) {
         ansBox.innerText = "Error executing RAG agent: " + err.message;
+      } finally {
+        // --- 2. UNLOCK UI WHEN FINISHED ---
+        executeBtn.disabled = false;
+        executeBtn.classList.remove("opacity-50", "cursor-not-allowed");
+        executeBtn.innerHTML = `Execute RAG Agent`;
       }
     }
 
@@ -464,7 +602,7 @@
         <div class="p-3 bg-[#050914] border border-gray-800 rounded-lg text-xs space-y-1">
           <div class="text-[11px] text-emerald-400 font-semibold">${c.dataset_name}</div>
           <div class="text-gray-300 font-medium">Q: ${c.user_query}</div>
-          <div class="text-gray-400 mt-1">${c.ai_response}</div>
+          <div class="text-gray-400 mt-1 markdown-content">${renderMarkdown(c.ai_response)}</div>
         </div>
       `).join('');
     }
@@ -517,9 +655,11 @@
 
     function viewGlobalLog(query, answer) {
       const chat = document.getElementById('globalChatContainer');
+      const formattedAns = renderMarkdown(unescape(answer));
+
       chat.innerHTML += `
-        <div class="text-right"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${unescape(query)}</span></div>
-        <div class="text-left"><span class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-3 rounded-lg text-xs max-w-xl">${unescape(answer)}</span></div>
+        <div class="text-right mb-3"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${unescape(query)}</span></div>
+        <div class="text-left mb-3"><div class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-4 rounded-xl text-xs max-w-2xl markdown-content">${formattedAns}</div></div>
       `;
       chat.scrollTop = chat.scrollHeight;
     }
@@ -530,7 +670,7 @@
       if (!q) return;
 
       const chat = document.getElementById('globalChatContainer');
-      chat.innerHTML += `<div class="text-right"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${q}</span></div>`;
+      chat.innerHTML += `<div class="text-right mb-3"><span class="inline-block bg-indigo-600 text-white p-3 rounded-lg text-xs max-w-lg">${q}</span></div>`;
       input.value = '';
       chat.scrollTop = chat.scrollHeight;
 
@@ -541,11 +681,12 @@
       });
       const data = await res.json();
 
+      const formattedAnswer = renderMarkdown(data.answer);
+
       chat.innerHTML += `
-        <div class="text-left">
-          <div class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-3 rounded-lg text-xs max-w-xl">
-            <p class="leading-relaxed">${data.answer}</p>
-            ${data.web_sources && data.web_sources.length ? `<div class="mt-2 pt-2 border-t border-gray-800 text-[10px] text-cyan-400">Sources: ${data.web_sources.map(s => s.title).join(', ')}</div>` : ''}
+        <div class="text-left mb-3">
+          <div class="inline-block bg-gray-900 border border-gray-800 text-gray-200 p-4 rounded-xl text-xs max-w-2xl">
+            <div class="markdown-content">${formattedAnswer}</div>
           </div>
         </div>
       `;

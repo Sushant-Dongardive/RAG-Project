@@ -13,3 +13,8 @@ pillow>=10.2.0
 google-generativeai>=0.4.0
 duckduckgo-search>=5.0.0
 scikit-learn>=1.4.0
+python-docx
+pandas
+openpyxl
+tabulate
+pypdf
