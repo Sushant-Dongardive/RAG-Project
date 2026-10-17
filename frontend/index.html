@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Nexus — Intelligent Document Knowledge Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Modern Font Stack (Inter & JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Markdown & Sanitizer -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            surface: {
+              50: '#18181b',
+              100: '#121215',
+              200: '#09090b',
+              border: '#27272a',
+              borderSubtle: '#1f1f23',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #09090b;
+      color: #e4e4e7;
+      font-family: 'Inter', system-ui, sans-serif;
+      letter-spacing: -0.011em;
+    }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+    /* Markdown Formatted Content Typography */
+    .prose-custom {
+      font-size: 0.915rem;
+      line-height: 1.65;
+      color: #d4d4d8;
+    }
+    .prose-custom p { margin-bottom: 0.85rem; }
+    .prose-custom p:last-child { margin-bottom: 0; }
+    .prose-custom h1, .prose-custom h2, .prose-custom h3, .prose-custom h4 {
+      font-weight: 600;
+      color: #fafafa;
+      letter-spacing: -0.02em;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .prose-custom h1 { font-size: 1.25rem; }
+    .prose-custom h2 { font-size: 1.1rem; }
+    .prose-custom h3 { font-size: 1.0rem; }
+    .prose-custom ul {
+      list-style-type: disc;
+      margin-left: 1.35rem;
+      margin-bottom: 0.85rem;
+    }
+    .prose-custom ol {
+      list-style-type: decimal;
+      margin-left: 1.35rem;
+      margin-bottom: 0.85rem;
+    }
+    .prose-custom li { margin-bottom: 0.35rem; }
+    .prose-custom strong { color: #ffffff; font-weight: 600; }
+    .prose-custom hr { border-color: #27272a; margin: 1.25rem 0; }
+    .prose-custom code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.825rem;
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #93c5fd;
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.375rem;
+    }
+    .prose-custom pre {
+      background: #121215;
+      border: 1px solid #27272a;
+      border-radius: 0.5rem;
+      padding: 0.85rem 1rem;
+      overflow-x: auto;
+      margin-bottom: 0.85rem;
+    }
+    .prose-custom pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: #e4e4e7;
+    }
+    .prose-custom table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 1rem 0;
+      background: #121215;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      border: 1px solid #27272a;
+    }
+    .prose-custom th, .prose-custom td {
+      border: 1px solid #27272a;
+      padding: 0.6rem 0.85rem;
+      text-align: left;
+    }
+    .prose-custom th {
+      background: #18181b;
+      font-weight: 600;
+      color: #f4f4f5;
+    }
+    .prose-custom tr:nth-child(even) {
+      background: #141418;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col bg-surface-200 antialiased overflow-hidden select-none">
+
+  <!-- Minimalist Top Navigation Header -->
+  <header class="h-14 border-b border-surface-border bg-surface-100/90 backdrop-blur px-5 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-3">
+      <!-- App Brand Icon -->
+      <div class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-100 shadow-sm font-semibold text-xs">
+        <i class="fa-solid fa-shapes text-brand-400"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-sm text-zinc-100 tracking-tight">Nexus</span>
+          <span class="text-[10px] font-medium text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/60">RAG Engine</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Dataset Scope Capsule -->
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-[11px] font-medium text-zinc-400">FAISS & BM25 Ready</span>
+      </div>
+
+      <div class="h-4 w-px bg-zinc-800 hidden sm:block"></div>
+
+      <div class="relative flex items-center">
+        <span class="text-xs text-zinc-400 mr-2 hidden md:inline">Scope:</span>
+        <div class="relative">
+          <select id="activeDatasetSelect" onchange="handleScopeChange()" class="appearance-none bg-surface-50 border border-surface-border text-xs rounded-lg pl-3 pr-8 py-1.5 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition cursor-pointer">
+            <option value="">Select Document Scope</option>
+            <option value="ALL">All Knowledge Datasets</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- User Profile Badge & Logout -->
+      <div class="h-4 w-px bg-zinc-800 hidden sm:block"></div>
+      <div id="userProfileChip" class="flex items-center gap-2 pl-1">
+        <div class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center text-[10px] font-semibold">
+          <span id="userInitial">U</span>
+        </div>
+        <span id="userNameHeader" class="text-xs text-zinc-300 font-medium hidden md:inline truncate max-w-[100px]">Researcher</span>
+        <button onclick="handleSignOut()" title="Sign out" class="text-zinc-500 hover:text-rose-400 p-1 rounded transition text-xs">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- Left Collapsible Sidebar -->
+    <aside class="w-64 border-r border-surface-border bg-surface-100 flex flex-col justify-between p-3 shrink-0">
+      <div class="space-y-4">
+        <!-- Main Navigation Items -->
+        <nav class="space-y-1">
+          <button onclick="switchView('workspace')" id="btn-workspace" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-200 bg-zinc-800/80 border border-zinc-700/70 transition text-left">
+            <i class="fa-solid fa-message text-brand-400 w-4 text-center"></i>
+            <span>Research Chat</span>
+          </button>
+          
+          <button onclick="switchView('kb')" id="btn-kb" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
+            <i class="fa-solid fa-book-bookmark text-zinc-400 w-4 text-center"></i>
+            <span>Knowledge Library</span>
+          </button>
+
+          <button onclick="switchView('compare')" id="btn-compare" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
+            <i class="fa-solid fa-code-compare text-zinc-400 w-4 text-center"></i>
+            <span>Multi-Doc Compare</span>
+          </button>
+
+          <button onclick="switchView('ingestion')" id="btn-ingest" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
+            <i class="fa-solid fa-arrow-up-from-bracket text-zinc-400 w-4 text-center"></i>
+            <span>Upload Documents</span>
+          </button>
+
+          <button onclick="toggleGlobalAI()" id="btn-global" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
+            <i class="fa-solid fa-globe text-cyan-400 w-4 text-center"></i>
+            <span>Global Web AI</span>
+          </button>
+        </nav>
+
+        <!-- Quick Document Scope List -->
+        <div class="pt-2">
+          <div class="flex items-center justify-between px-2 mb-1.5">
+            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Active Library</span>
+            <button onclick="syncLocalFolder()" title="Rescan local folders" class="text-zinc-500 hover:text-zinc-300 text-xs transition">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+          <div id="sidebarDocList" class="space-y-1 max-h-48 overflow-y-auto pr-1">
+            <div class="text-[11px] text-zinc-500 px-2 py-1">Loading library...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom System Status Pill -->
+      <div class="p-3 rounded-lg bg-surface-50 border border-surface-border text-xs space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-zinc-400">Synthesis Engine</span>
+          <span class="text-[10px] text-zinc-300 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">Gemini 3.6</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] text-zinc-400">Reranker</span>
+          <span class="text-[10px] text-zinc-300 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">Cross-Encoder</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content Workspace -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-surface-200">
+
+      <!-- ================= VIEW 1: RESEARCH WORKSPACE ================= -->
+      <section id="view-workspace" class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Conversation Feed / Response Viewer -->
+        <div id="chatFeed" class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full">
+          
+          <!-- Empty State Hero (shown before queries) -->
+          <div id="welcomeState" class="text-center py-16 space-y-4">
+            <div class="inline-flex w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 items-center justify-center text-zinc-300 text-lg shadow-inner">
+              <i class="fa-solid fa-sparkles text-brand-400"></i>
+            </div>
+            <div class="space-y-1">
+              <h2 class="text-xl font-semibold text-zinc-100 tracking-tight">Ask your document repository</h2>
+              <p class="text-xs text-zinc-400 max-w-md mx-auto">
+                Hybrid vector search combined with neural BM25 and Cross-Encoder reranking ensures exact citation accuracy.
+              </p>
+            </div>
+
+            <!-- Quick Suggestion Pills -->
+            <div class="flex flex-wrap justify-center gap-2 pt-2 max-w-lg mx-auto">
+              <button onclick="setQuery('What was the Mean Reciprocal Rank (MRR@10) of the Cross-Encoder?')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
+                "What was the MRR@10 of the Cross-Encoder?"
+              </button>
+              <button onclick="setQuery('Explain the system architecture and its micro-agents.')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
+                "Explain the system architecture"
+              </button>
+              <button onclick="setQuery('Show performance metrics in a structured table')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
+                "Show performance metrics table"
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Result Card Container (hidden initially) -->
+          <div id="resultContainer" class="hidden space-y-5">
+            <!-- User Query Bubble -->
+            <div class="flex items-start justify-end gap-3">
+              <div class="bg-zinc-800 text-zinc-100 px-4 py-2.5 rounded-2xl max-w-xl text-sm border border-zinc-700/50 font-normal">
+                <span id="displayUserQuery"></span>
+              </div>
+            </div>
+
+            <!-- Assistant Answer Card -->
+            <div class="bg-surface-100 border border-surface-border rounded-xl p-5 space-y-4 shadow-sm">
+              <!-- Header & Metadata Action Bar -->
+              <div class="flex items-center justify-between border-b border-surface-border pb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-feather"></i>
+                  </div>
+                  <span class="text-xs font-semibold text-zinc-200">Grounded Synthesis</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span id="responseStatusTag" class="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-md">
+                    Verified Grounded
+                  </span>
+                  <button onclick="copyAnswerText()" title="Copy answer" class="text-zinc-400 hover:text-zinc-200 p-1.5 rounded transition text-xs">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Collapsible Execution & Inspection Accordion -->
+              <div id="traceAccordion" class="rounded-lg bg-surface-50 border border-surface-border text-xs overflow-hidden">
+                <button onclick="toggleTraceDetails()" class="w-full px-3.5 py-2 flex items-center justify-between text-zinc-400 hover:text-zinc-200 transition">
+                  <span class="flex items-center gap-2 font-mono text-[11px]">
+                    <i class="fa-solid fa-list-check text-brand-400"></i>
+                    <span id="traceSummaryLabel">Retrieval & Rerank Trace</span>
+                  </span>
+                  <i id="traceChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                </button>
+                <div id="traceContent" class="hidden px-3.5 pb-3 pt-1 border-t border-surface-border space-y-2 text-[11px] font-mono text-zinc-400">
+                  <!-- Step items injected here -->
+                </div>
+              </div>
+
+              <!-- Markdown Output Content -->
+              <div id="groundedAnswerBox" class="prose-custom leading-relaxed">
+                <!-- Answer parsed into HTML -->
+              </div>
+
+              <!-- Source Citations Bar -->
+              <div id="citationsBar" class="border-t border-surface-border pt-3 flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-medium text-zinc-500">Sources:</span>
+                <div id="citationsList" class="flex flex-wrap items-center gap-1.5">
+                  <!-- Dynamic citations badges -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Command Bar Input -->
+        <div class="p-4 border-t border-surface-border bg-surface-100/60 backdrop-blur shrink-0">
+          <div class="max-w-4xl mx-auto">
+            <div class="relative bg-surface-50 border border-surface-border focus-within:border-zinc-500 rounded-xl p-2 shadow-lg transition">
+              <textarea 
+                id="ragQueryInput" 
+                rows="1" 
+                placeholder="Ask anything about the selected document... (Press Enter to submit, Shift+Enter for new line)" 
+                class="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none px-3 py-2 min-h-[40px] max-h-36"
+                onkeydown="handleInputKey(event)"
+                oninput="autoGrow(this)"></textarea>
+
+              <div class="flex items-center justify-between px-2 pt-1 border-t border-surface-borderSubtle">
+                <div class="flex items-center gap-2">
+                  <span id="activeScopeChip" class="text-[11px] text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded border border-zinc-700/60">
+                    <i class="fa-regular fa-file-lines text-brand-400 mr-1"></i>
+                    <span id="activeScopeName">Select document</span>
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="runRAGSearch()" id="executeBtn" class="flex items-center gap-1.5 bg-zinc-100 hover:bg-white text-zinc-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                    <span>Ask</span>
+                    <kbd class="text-[9px] bg-zinc-300/80 px-1 py-0.5 rounded text-zinc-900 font-mono">⏎</kbd>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 2: KNOWLEDGE BASE ================= -->
+      <section id="view-kb" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-6xl mx-auto w-full space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-zinc-100">Knowledge Library</h2>
+            <p class="text-xs text-zinc-400">All local documents committed to SQLite, indexed in FAISS, and tokenized for BM25 search.</p>
+          </div>
+          <button onclick="syncLocalFolder()" class="flex items-center gap-2 bg-surface-50 hover:bg-zinc-800 border border-surface-border px-3 py-2 rounded-lg text-xs text-zinc-200 transition font-medium">
+            <i class="fa-solid fa-rotate text-zinc-400"></i>
+            <span>Rescan & Sync Directory</span>
+          </button>
+        </div>
+
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden">
+          <!-- Document List Card -->
+          <div class="md:col-span-1 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
+            <div class="p-3.5 border-b border-surface-border font-medium text-xs text-zinc-300">
+              Indexed Documents (<span id="kbDocCount">0</span>)
+            </div>
+            <div id="datasetListContainer" class="flex-1 overflow-y-auto p-3 space-y-2">
+              <!-- Injected dataset items -->
+            </div>
+          </div>
+
+          <!-- Document Chat History Details -->
+          <div class="md:col-span-2 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
+            <div class="p-3.5 border-b border-surface-border flex items-center justify-between">
+              <span id="kbHistoryTitle" class="font-medium text-xs text-zinc-300">Document Query History</span>
+            </div>
+            <div id="kbHistoryContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+              <p class="text-xs text-zinc-500">Select a document from the left to view historical queries and responses.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 3: MULTI-PAPER COMPARE ================= -->
+      <section id="view-compare" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold text-zinc-100">Multi-Document Comparative Analysis</h2>
+          <p class="text-xs text-zinc-400">Synthesize direct comparisons across two distinct indexed papers or data tables.</p>
+        </div>
+
+        <!-- Comparative Setup Card -->
+        <div class="bg-surface-100 border border-surface-border rounded-xl p-5 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-zinc-300">Document A</label>
+              <select id="compareDocA" class="w-full bg-surface-50 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500">
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-zinc-300">Document B</label>
+              <select id="compareDocB" class="w-full bg-surface-50 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500">
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-medium text-zinc-300">Comparative Inquiry</label>
+            <div class="flex gap-2">
+              <input id="compareQuery" type="text" placeholder="e.g. Compare the retrieval latency and accuracy metrics between both papers..." 
+                     class="flex-1 bg-surface-50 border border-surface-border rounded-lg px-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500"
+                     onkeydown="if(event.key==='Enter') runCompare()">
+              <button onclick="runCompare()" id="btnRunCompare" class="bg-zinc-100 hover:bg-white text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold transition">
+                Compare
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Container -->
+        <div class="flex-1 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
+          <div class="p-3.5 border-b border-surface-border font-medium text-xs text-zinc-300">
+            Comparison Results & History
+          </div>
+          <div id="compareHistoryContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <p class="text-xs text-zinc-500">No comparative sessions run yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW 4: DOCUMENT INGESTION ================= -->
+      <section id="view-ingestion" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-4xl mx-auto w-full space-y-6">
+        <div>
+          <h2 class="text-lg font-semibold text-zinc-100">Document & OCR Ingestion</h2>
+          <p class="text-xs text-zinc-400">Upload documents to extract, chunk, embed into FAISS, and tokenize for BM25.</p>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div class="border-2 border-dashed border-surface-border hover:border-zinc-500 bg-surface-100/50 hover:bg-surface-100 rounded-2xl p-12 text-center transition cursor-pointer flex flex-col items-center justify-center space-y-3"
+             onclick="document.getElementById('fileUploadInput').click()">
+          <input type="file" id="fileUploadInput" class="hidden" onchange="uploadSelectedFile(this)" accept=".pdf,.docx,.doc,.csv,.xlsx,.xls,.txt,.md">
+          <div class="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-300 text-lg">
+            <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="text-sm font-medium text-zinc-200">Click or drag documents to index</p>
+            <p class="text-xs text-zinc-500">Supports PDF (with Table OCR), DOCX, CSV, Excel, TXT, and Markdown</p>
+          </div>
+          <span class="inline-block mt-2 text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full border border-zinc-700">
+            Auto-chunked at 500 tokens with 100 overlap
+          </span>
+        </div>
+
+        <div id="uploadStatus" class="text-xs text-center font-medium min-h-[20px]"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Global AI Modal Dialog -->
+  <div id="globalAiModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-surface-100 border border-surface-border rounded-2xl flex flex-col max-h-[85vh] shadow-2xl overflow-hidden">
+      <div class="p-4 border-b border-surface-border flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-globe text-cyan-400"></i>
+          <span class="text-sm font-semibold text-zinc-100">Global AI (DuckDuckGo + Wikipedia)</span>
+        </div>
+        <button onclick="toggleGlobalAI()" class="text-zinc-400 hover:text-zinc-200 p-1 text-xs">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div id="globalChatContainer" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs min-h-[300px]">
+        <div class="text-zinc-400 bg-surface-50 p-3 rounded-lg border border-surface-border text-xs">
+          Ask questions outside your document repository. The system retrieves external web knowledge and synthesizes responses using Gemini.
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-surface-border bg-surface-50 flex gap-2">
+        <input id="globalInput" type="text" placeholder="Ask anything globally..." 
+               class="flex-1 bg-surface-100 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500"
+               onkeydown="if(event.key==='Enter') sendGlobalQuery()">
+        <button onclick="sendGlobalQuery()" class="bg-zinc-100 hover:bg-white text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold transition">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    const API_BASE = (window.location.protocol.startsWith('http') && window.location.port) 
+      ? window.location.origin 
+      : "http://127.0.0.1:8000";
+
+    // Authentication Guard
+    const activeUser = JSON.parse(localStorage.getItem("nexus_user") || "null");
+    if (!activeUser) {
+      window.location.href = "/login";
+    }
+
+    function initUserProfile() {
+      if (activeUser) {
+        const initialEl = document.getElementById("userInitial");
+        const nameEl = document.getElementById("userNameHeader");
+        if (initialEl) initialEl.innerText = (activeUser.name || activeUser.email || "U")[0].toUpperCase();
+        if (nameEl) nameEl.innerText = activeUser.name || activeUser.email;
+      }
+    }
+
+    function handleSignOut() {
+      if (confirm("Are you sure you want to sign out?")) {
+        localStorage.removeItem("nexus_user");
+        localStorage.removeItem("nexus_token");
+        window.location.href = "/login";
+      }
+    }
+
+    let lastAnswerRaw = "";
+
+
+    function renderMarkdown(content) {
+      if (!content) return "";
+      const rawHtml = (window.marked && marked.parse) ? marked.parse(content) : content;
+      return window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
+    }
+
+    function autoGrow(element) {
+      element.style.height = "5px";
+      element.style.height = (element.scrollHeight) + "px";
+    }
+
+    function handleInputKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        runRAGSearch();
+      }
+    }
+
+    function setQuery(text) {
+      const input = document.getElementById('ragQueryInput');
+      input.value = text;
+      autoGrow(input);
+      runRAGSearch();
+    }
+
+    function switchView(viewName) {
+      ['workspace', 'kb', 'compare', 'ingestion'].forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`btn-${v}`);
+        if (el) el.classList.add('hidden');
+        if (btn) {
+          btn.classList.remove('bg-zinc-800/80', 'text-zinc-200', 'border-zinc-700/70');
+          btn.classList.add('text-zinc-400');
+        }
+      });
+
+      const activeEl = document.getElementById(`view-${viewName}`);
+      const activeBtn = document.getElementById(`btn-${viewName}`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.add('bg-zinc-800/80', 'text-zinc-200', 'border-zinc-700/70');
+        activeBtn.classList.remove('text-zinc-400');
+      }
+
+      if (viewName === 'kb') loadKnowledgeBase();
+      if (viewName === 'compare') loadCompareDropdowns();
+    }
+
+    function handleScopeChange() {
+      const select = document.getElementById('activeDatasetSelect');
+      const val = select.value;
+      const label = document.getElementById('activeScopeName');
+      label.innerText = val ? val : "Select document";
+    }
+
+    async function loadDatasets() {
+      try {
+        const res = await fetch(`${API_BASE}/datasets`);
+        const data = await res.json();
+        const select = document.getElementById('activeDatasetSelect');
+        const sidebarList = document.getElementById('sidebarDocList');
+        const currentVal = select.value;
+        
+        select.innerHTML = '<option value="">Select Document Scope</option><option value="ALL">All Knowledge Datasets</option>';
+        sidebarList.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          sidebarList.innerHTML = '<div class="text-[11px] text-zinc-500 px-2 py-1">No documents indexed.</div>';
+          return;
+        }
+
+        data.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.name;
+          opt.innerText = d.name;
+          select.appendChild(opt);
+
+          // Add to sidebar quick list
+          sidebarList.innerHTML += `
+            <div onclick="selectScope('${d.name}')" class="px-2 py-1.5 rounded hover:bg-zinc-800/60 cursor-pointer text-[11px] text-zinc-300 flex items-center justify-between transition truncate">
+              <span class="truncate"><i class="fa-regular fa-file-lines text-zinc-500 mr-1.5"></i>${d.name}</span>
+              <span class="text-[10px] text-zinc-500">${d.total_pages || 1}p</span>
+            </div>
+          `;
+        });
+
+        if (data.some(d => d.name === currentVal)) {
+          select.value = currentVal;
+        } else if (data.length > 0) {
+          select.value = data[0].name;
+        }
+
+        handleScopeChange();
+      } catch (err) {
+        console.error("API error loading datasets:", err);
+      }
+    }
+
+    function selectScope(name) {
+      const select = document.getElementById('activeDatasetSelect');
+      select.value = name;
+      handleScopeChange();
+      switchView('workspace');
+    }
+
+    async function runRAGSearch() {
+      const input = document.getElementById('ragQueryInput');
+      const query = input.value.trim();
+      const activeDataset = document.getElementById('activeDatasetSelect').value;
+      const executeBtn = document.getElementById('executeBtn');
+
+      if (!query) return;
+
+      if (!activeDataset) {
+        alert("Please select an active document scope from the top-right dropdown.");
+        return;
+      }
+
+      // UI Transition
+      document.getElementById('welcomeState').classList.add('hidden');
+      const resContainer = document.getElementById('resultContainer');
+      resContainer.classList.remove('hidden');
+
+      document.getElementById('displayUserQuery').innerText = query;
+      const ansBox = document.getElementById('groundedAnswerBox');
+      const statusTag = document.getElementById('responseStatusTag');
+      const traceContent = document.getElementById('traceContent');
+      const citationsList = document.getElementById('citationsList');
+
+      executeBtn.disabled = true;
+      executeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Running`;
+
+      ansBox.innerHTML = `
+        <div class="flex items-center gap-2.5 text-zinc-400 py-3 text-xs">
+          <i class="fa-solid fa-circle-notch fa-spin text-brand-400"></i>
+          <span>Retrieving chunks, running Cross-Encoder reranker, and synthesizing answer...</span>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(`${API_BASE}/rag/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, active_dataset: activeDataset })
+        });
+        const data = await res.json();
+
+        // Render Traces
+        if (data.trace && data.trace.length) {
+          traceContent.innerHTML = data.trace.map(t => `
+            <div class="flex items-start gap-2">
+              <span class="text-brand-400 font-semibold shrink-0">[${t.agent}]</span>
+              <span class="text-zinc-300">${t.message}</span>
+            </div>
+          `).join('');
+          document.getElementById('traceSummaryLabel').innerText = `Completed ${data.trace.length} pipeline steps`;
+        }
+
+        // Render Answer
+        if (data.found_in_dataset) {
+          lastAnswerRaw = data.answer;
+          ansBox.innerHTML = renderMarkdown(data.answer);
+          statusTag.innerText = "Verified Grounded";
+          statusTag.className = "text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-md";
+
+          // Render Citations
+          if (data.sources && data.sources.length) {
+            citationsList.innerHTML = data.sources.map(s => `
+              <span class="inline-flex items-center gap-1 text-[11px] bg-zinc-800/90 text-zinc-300 border border-zinc-700/60 px-2 py-0.5 rounded">
+                <i class="fa-regular fa-bookmark text-brand-400"></i> ${s}
+              </span>
+            `).join('');
+          } else {
+            citationsList.innerHTML = `<span class="text-[11px] text-zinc-500">Direct grounded context</span>`;
+          }
+        } else {
+          lastAnswerRaw = data.answer;
+          ansBox.innerHTML = `<p class="text-amber-400 font-medium">${data.answer}</p>`;
+          statusTag.innerText = "Not In Dataset";
+          statusTag.className = "text-[11px] font-medium text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-md";
+          citationsList.innerHTML = `
+            <button onclick="switchToGlobalAI('${encodeURIComponent(query)}')" class="text-[11px] text-brand-400 hover:text-brand-300 underline font-medium">
+              Search the web via Global AI
+            </button>
+          `;
+        }
+      } catch (err) {
+        ansBox.innerHTML = `<p class="text-rose-400 font-medium">Request failed: ${err.message}</p>`;
+      } finally {
+        executeBtn.disabled = false;
+        executeBtn.innerHTML = `<span>Ask</span><kbd class="text-[9px] bg-zinc-300/80 px-1 py-0.5 rounded text-zinc-900 font-mono">⏎</kbd>`;
+        document.getElementById('chatFeed').scrollTop = document.getElementById('chatFeed').scrollHeight;
+      }
+    }
+
+    function toggleTraceDetails() {
+      const content = document.getElementById('traceContent');
+      const chevron = document.getElementById('traceChevron');
+      content.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-180');
+    }
+
+    function copyAnswerText() {
+      if (lastAnswerRaw) {
+        navigator.clipboard.writeText(lastAnswerRaw);
+        alert("Answer copied to clipboard!");
+      }
+    }
+
+    // Knowledge Base View
+    async function loadKnowledgeBase() {
+      const container = document.getElementById('datasetListContainer');
+      container.innerHTML = '<p class="text-xs text-zinc-500">Loading datasets...</p>';
+
+      try {
+        const res = await fetch(`${API_BASE}/datasets`);
+        const data = await res.json();
+        document.getElementById('kbDocCount').innerText = data.length;
+
+        if (!data || !data.length) {
+          container.innerHTML = '<p class="text-xs text-zinc-500">No documents indexed in SQLite.</p>';
+          return;
+        }
+
+        container.innerHTML = data.map(d => `
+          <div onclick="selectKBDoc('${d.name}')" class="p-3 rounded-lg bg-surface-50 border border-surface-border hover:border-zinc-500 transition cursor-pointer flex items-center justify-between">
+            <div class="truncate mr-2">
+              <p class="text-xs font-medium text-zinc-200 truncate">${d.name}</p>
+              <p class="text-[10px] text-zinc-500">${d.total_pages || 1} pages</p>
+            </div>
+            <button onclick="event.stopPropagation(); deleteDataset('${d.name}')" title="Delete document" class="text-zinc-500 hover:text-rose-400 p-1.5 transition">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `).join('');
+
+        if (data.length > 0) {
+          selectKBDoc(data[0].name);
+        }
+      } catch (e) {
+        container.innerHTML = `<p class="text-xs text-rose-400">Failed to load: ${e.message}</p>`;
+      }
+    }
+
+    async function selectKBDoc(datasetName) {
+      document.getElementById('kbHistoryTitle').innerText = `Query History: ${datasetName}`;
+      const container = document.getElementById('kbHistoryContainer');
+      container.innerHTML = '<p class="text-xs text-zinc-500">Loading history...</p>';
+
+      try {
+        const res = await fetch(`${API_BASE}/datasets/${encodeURIComponent(datasetName)}/history`);
+        const logs = await res.json();
+
+        if (!logs || !logs.length) {
+          container.innerHTML = `<p class="text-xs text-zinc-500">No previous queries recorded for <b>${datasetName}</b>.</p>`;
+          return;
+        }
+
+        container.innerHTML = logs.map(l => `
+          <div class="p-3.5 bg-surface-50 border border-surface-border rounded-xl space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-zinc-200">${l.user_query}</span>
+              <span class="text-[10px] text-zinc-500">${l.timestamp}</span>
+            </div>
+            <div class="text-zinc-400 prose-custom text-xs pl-3 border-l-2 border-brand-500/40">
+              ${renderMarkdown(l.ai_response)}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<p class="text-xs text-rose-400">Error loading history: ${e.message}</p>`;
+      }
+    }
+
+    async function deleteDataset(filename) {
+      if (!confirm(`Are you sure you want to delete "${filename}" from SQLite and vector indices?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/documents/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadDatasets();
+          loadKnowledgeBase();
+        } else {
+          alert("Failed to delete document.");
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function syncLocalFolder() {
+      try {
+        const res = await fetch(`${API_BASE}/datasets/sync`);
+        const data = await res.json();
+        alert(`Synchronized! Total indexed chunks: ${data.total_indexed_chunks}`);
+        loadDatasets();
+        if (!document.getElementById('view-kb').classList.contains('hidden')) {
+          loadKnowledgeBase();
+        }
+      } catch (err) {
+        alert(`Sync error: ${err.message}`);
+      }
+    }
+
+    // Ingestion File Upload
+    async function uploadSelectedFile(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const status = document.getElementById('uploadStatus');
+      status.innerHTML = `<span class="text-zinc-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Ingesting and indexing ${file.name}...</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        status.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-check mr-1.5"></i> Successfully indexed ${data.filename} (${data.total_chunks} chunks)!</span>`;
+        loadDatasets();
+      } catch (e) {
+        status.innerHTML = `<span class="text-rose-400">Upload failed: ${e.message}</span>`;
+      }
+    }
+
+    // Compare View
+    async function loadCompareDropdowns() {
+      const res = await fetch(`${API_BASE}/datasets`);
+      const data = await res.json();
+      const sA = document.getElementById('compareDocA');
+      const sB = document.getElementById('compareDocB');
+      sA.innerHTML = ''; sB.innerHTML = '';
+      data.forEach(d => {
+        sA.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+        sB.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+      });
+      loadCompareHistory();
+    }
+
+    async function runCompare() {
+      const doc_a = document.getElementById('compareDocA').value;
+      const doc_b = document.getElementById('compareDocB').value;
+      const query = document.getElementById('compareQuery').value.trim();
+      const container = document.getElementById('compareHistoryContainer');
+
+      if (!query) {
+        alert("Please enter a question to compare.");
+        return;
+      }
+
+      container.innerHTML = `<p class="text-xs text-zinc-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Analyzing comparative context between ${doc_a} and ${doc_b}...</p>`;
+
+      try {
+        await fetch(`${API_BASE}/compare/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc_a, doc_b, query })
+        });
+        loadCompareHistory();
+      } catch (err) {
+        container.innerHTML = `<p class="text-xs text-rose-400">Failed: ${err.message}</p>`;
+      }
+    }
+
+    async function loadCompareHistory() {
+      const container = document.getElementById('compareHistoryContainer');
+      const res = await fetch(`${API_BASE}/compare/history`);
+      const data = await res.json();
+
+      if (!data || !data.length) {
+        container.innerHTML = `<p class="text-xs text-zinc-500">No comparative sessions run yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = data.map(c => `
+        <div class="p-3.5 bg-surface-50 border border-surface-border rounded-xl space-y-2 text-xs">
+          <div class="flex items-center justify-between text-brand-400 font-semibold text-[11px]">
+            <span>${c.dataset_name}</span>
+            <span class="text-zinc-500 font-normal">${c.timestamp}</span>
+          </div>
+          <p class="text-zinc-200 font-medium">Q: ${c.user_query}</p>
+          <div class="text-zinc-400 prose-custom text-xs pl-3 border-l-2 border-brand-500/40">
+            ${renderMarkdown(c.ai_response)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Global AI Modal
+    function toggleGlobalAI() {
+      const modal = document.getElementById('globalAiModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function switchToGlobalAI(queryEncoded) {
+      toggleGlobalAI();
+      const input = document.getElementById('globalInput');
+      input.value = decodeURIComponent(queryEncoded);
+      sendGlobalQuery();
+    }
+
+    async function sendGlobalQuery() {
+      const input = document.getElementById('globalInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const chat = document.getElementById('globalChatContainer');
+      chat.innerHTML += `
+        <div class="text-right">
+          <span class="inline-block bg-zinc-800 text-zinc-100 px-3.5 py-2 rounded-xl text-xs border border-zinc-700/60 max-w-md">${q}</span>
+        </div>
+      `;
+      input.value = '';
+      chat.scrollTop = chat.scrollHeight;
+
+      try {
+        const res = await fetch(`${API_BASE}/global-ai/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q })
+        });
+        const data = await res.json();
+        chat.innerHTML += `
+          <div class="text-left">
+            <div class="inline-block bg-surface-50 border border-surface-border text-zinc-300 p-4 rounded-xl text-xs max-w-xl prose-custom">
+              ${renderMarkdown(data.answer)}
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        chat.innerHTML += `<div class="text-rose-400 text-xs">Failed: ${err.message}</div>`;
+      }
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    window.onload = () => {
+      initUserProfile();
+      loadDatasets();
+    };
+
+  </script>
+</body>
+</html>
