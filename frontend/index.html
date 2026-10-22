@@ -8,7 +8,7 @@
   <!-- Modern Font Stack (Inter & JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS & FontAwesome Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -35,13 +35,6 @@
               500: '#6366f1',
               600: '#4f46e5',
               700: '#4338ca',
-            },
-            surface: {
-              50: '#18181b',
-              100: '#121215',
-              200: '#09090b',
-              border: '#27272a',
-              borderSubtle: '#1f1f23',
             }
           }
         }
@@ -50,143 +43,845 @@
   </script>
 
   <style>
-    body {
-      background-color: #09090b;
-      color: #e4e4e7;
-      font-family: 'Inter', system-ui, sans-serif;
-      letter-spacing: -0.011em;
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ═════════════════════════════════════════════════
+       THEME VARIABLES: DARK & LIGHT
+    ═════════════════════════════════════════════════ */
+    :root, html.dark {
+      --bg-deep: #06060a;
+      --bg-card: rgba(14, 14, 20, 0.82);
+      --bg-card-hover: rgba(22, 22, 30, 0.9);
+      --bg-input: rgba(20, 20, 26, 0.85);
+      --bg-bar: rgba(10, 10, 14, 0.78);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.2);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #818cf8;
+      --accent-vivid: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.45);
+      --accent-cyan: #38bdf8;
+      --accent-purple: #a855f7;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #fb7185;
+      --orb-opacity: 0.55;
+      --radius: 16px;
+      --radius-sm: 10px;
     }
 
-    /* Custom subtle scrollbar */
+    html.light {
+      --bg-deep: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --bg-card-hover: rgba(255, 255, 255, 0.98);
+      --bg-input: rgba(241, 245, 249, 0.95);
+      --bg-bar: rgba(255, 255, 255, 0.88);
+      --border-subtle: rgba(203, 213, 225, 0.85);
+      --border-hover: rgba(99, 102, 241, 0.45);
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-vivid: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --accent-cyan: #0284c7;
+      --accent-purple: #9333ea;
+      --success: #059669;
+      --warning: #d97706;
+      --danger: #e11d48;
+      --orb-opacity: 0.35;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      letter-spacing: -0.011em;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* ── Ambient Floating Orbs ── */
+    .ambient-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: var(--orb-opacity, 0.5);
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 22s ease-in-out infinite;
+      transition: opacity 0.5s ease;
+    }
+    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99, 102, 241, 0.45), transparent 70%); top: -14%; left: 22%; animation-delay: 0s; }
+    .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(56, 189, 248, 0.35), transparent 70%); bottom: -10%; right: 6%; animation-delay: -7s; }
+    .orb-3 { width: 420px; height: 420px; background: radial-gradient(circle, rgba(168, 85, 247, 0.35), transparent 70%); top: 40%; left: -8%; animation-delay: -14s; }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(35px, -25px) scale(1.06); }
+      66% { transform: translate(-25px, 20px) scale(0.94); }
+    }
+
+    /* ── Particle Background Canvas ── */
+    #particleCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    /* ── Spaceship Cursor & FX ── */
+    html, body, button, a, input, select, textarea, [role="button"], label {
+      cursor: none !important;
+    }
+
+    body.no-custom-cursor,
+    body.no-custom-cursor *,
+    body.no-custom-cursor button,
+    body.no-custom-cursor a,
+    body.no-custom-cursor input {
+      cursor: auto !important;
+    }
+
+    @media (pointer: coarse) {
+      html, body, button, a, input, select, textarea, [role="button"], label {
+        cursor: auto !important;
+      }
+      #spaceshipCursor, #cursorTrailCanvas {
+        display: none !important;
+      }
+    }
+
+    #cursorTrailCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    #spaceshipCursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 32px;
+      height: 32px;
+      margin-left: -16px;
+      margin-top: -16px;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate3d(-100px, -100px, 0);
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+
+    #spaceshipCursor.active { opacity: 1; }
+
+    .ship-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    .ship-model {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.8)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.5));
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s ease;
+    }
+
+    .ship-reticle {
+      position: absolute;
+      inset: -6px;
+      border: 1px dashed rgba(56, 189, 248, 0.7);
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.6) rotate(0deg);
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: spinReticle 6s linear infinite;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    }
+
+    @keyframes spinReticle {
+      to { transform: scale(1) rotate(360deg); }
+    }
+
+    #spaceshipCursor.hovering .ship-reticle {
+      opacity: 1;
+      transform: scale(1) rotate(45deg);
+    }
+
+    #spaceshipCursor.hovering .ship-model {
+      transform: scale(1.22);
+      filter: drop-shadow(0 0 9px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 22px rgba(129, 140, 248, 0.85));
+    }
+
+    .ship-thruster {
+      position: absolute;
+      bottom: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 12px;
+      background: linear-gradient(to bottom, #38bdf8, #818cf8 60%, transparent);
+      border-radius: 50%;
+      filter: blur(1px);
+      opacity: 0.85;
+      animation: flamePulse 0.12s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    #spaceshipCursor.hovering .ship-thruster {
+      height: 18px;
+      width: 10px;
+      opacity: 1;
+      background: linear-gradient(to bottom, #67e8f9, #c084fc 70%, transparent);
+    }
+
+    @keyframes flamePulse {
+      0% { transform: translateX(-50%) scaleY(0.85); opacity: 0.75; }
+      100% { transform: translateX(-50%) scaleY(1.35); opacity: 1; }
+    }
+
+    .warp-wave {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid #38bdf8;
+      pointer-events: none;
+      z-index: 9997;
+      transform: translate(-50%, -50%) scale(0.5);
+      animation: warpExpand 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.75);
+    }
+
+    @keyframes warpExpand {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; border-color: #67e8f9; }
+      100% { transform: translate(-50%, -50%) scale(5.5); opacity: 0; border-color: #a855f7; }
+    }
+
+    /* ── Rotating Conic Border Glow ── */
+    @property --glow-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+
+    @keyframes rotateBorder {
+      to { --glow-angle: 360deg; }
+    }
+
+    .card-glow-wrapper {
+      position: relative;
+    }
+
+    .card-glow-border {
+      position: absolute;
+      inset: -1.5px;
+      border-radius: calc(var(--radius) + 2px);
+      background: conic-gradient(
+        from var(--glow-angle, 0deg),
+        transparent 0%,
+        var(--accent-vivid) 12%,
+        #a78bfa 22%,
+        #38bdf8 34%,
+        transparent 45%,
+        transparent 100%
+      );
+      opacity: 0.35;
+      transition: opacity 0.4s ease;
+      animation: rotateBorder 5s linear infinite;
+      filter: blur(1.5px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card-glow-wrapper:hover .card-glow-border {
+      opacity: 0.85;
+    }
+
+    /* ── Glassmorphism Panels ── */
+    .glass-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(28px) saturate(1.4);
+      -webkit-backdrop-filter: blur(28px) saturate(1.4);
+      border: 1px solid var(--border-subtle);
+      box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* ── Comprehensive Light Mode Polishing ── */
+    html.light .glass-panel {
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border-subtle) !important;
+      box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.05),
+        0 1px 3px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+
+    html.light header {
+      background: rgba(255, 255, 255, 0.88) !important;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.95) !important;
+    }
+
+    html.light #sidebar {
+      background: rgba(255, 255, 255, 0.94) !important;
+      border-right: 1px solid rgba(226, 232, 240, 0.95) !important;
+    }
+
+    html.light .sidebar-brand-text .font-bold {
+      color: #0f172a !important;
+    }
+    html.light .sidebar-brand-text p {
+      color: #64748b !important;
+    }
+    html.light .sidebar-header-text {
+      color: #475569 !important;
+    }
+    html.light .sidebar-doc-item {
+      color: #1e293b !important;
+    }
+    html.light .sidebar-doc-item:hover {
+      background: rgba(241, 245, 249, 0.95) !important;
+    }
+    html.light .sidebar-doc-item .doc-text {
+      color: #1e293b !important;
+    }
+    html.light .sidebar-doc-item .doc-badge {
+      color: #64748b !important;
+    }
+    html.light .sidebar-footer-stats {
+      background: rgba(241, 245, 249, 0.9) !important;
+      border-color: rgba(226, 232, 240, 0.95) !important;
+    }
+    html.light .sidebar-footer-stats span {
+      color: #334155 !important;
+    }
+
+    html.light .nav-btn {
+      color: #475569 !important;
+    }
+    html.light .nav-btn:hover:not(.active) {
+      background: rgba(241, 245, 249, 0.95) !important;
+      color: #0f172a !important;
+    }
+    html.light .nav-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08)) !important;
+      border: 1px solid rgba(99, 102, 241, 0.35) !important;
+      color: #4338ca !important;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.1) !important;
+    }
+
+    /* Fixed Light Mode Bottom Bar */
+    html.light .input-bar-container {
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-top: 1px solid rgba(226, 232, 240, 0.95) !important;
+    }
+    html.light .input-bar-container .glass-panel {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.06) !important;
+    }
+    html.light #activeScopeChip {
+      background: rgba(241, 245, 249, 0.95) !important;
+      border-color: #cbd5e1 !important;
+      color: #334155 !important;
+    }
+    html.light #activeScopeName {
+      color: #0f172a !important;
+    }
+    html.light textarea#ragQueryInput {
+      color: #0f172a !important;
+    }
+    html.light textarea#ragQueryInput::placeholder {
+      color: #64748b !important;
+    }
+
+    html.light #welcomeState h2 {
+      color: #0f172a !important;
+    }
+    html.light #welcomeState p {
+      color: #475569 !important;
+    }
+    html.light .suggestion-chip {
+      background: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #334155 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    }
+    html.light .suggestion-chip:hover {
+      background: #f8fafc !important;
+      border-color: #6366f1 !important;
+      color: #4338ca !important;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15) !important;
+    }
+
+    html.light .card-glow-wrapper .glass-panel {
+      background: #ffffff !important;
+    }
+    html.light .prose-custom {
+      color: #1e293b !important;
+    }
+    html.light .prose-custom h1, 
+    html.light .prose-custom h2, 
+    html.light .prose-custom h3 {
+      color: #0f172a !important;
+    }
+    html.light .prose-custom code {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      color: #4f46e5 !important;
+    }
+    html.light .prose-custom pre {
+      background: #0f172a !important;
+      border-color: #1e293b !important;
+      color: #f8fafc !important;
+    }
+    html.light .prose-custom pre code {
+      color: #f8fafc !important;
+    }
+    html.light .prose-custom table {
+      background: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
+    html.light .prose-custom th {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+    }
+    html.light .prose-custom td {
+      border-color: #e2e8f0 !important;
+    }
+    html.light .prose-custom tr:nth-child(even) {
+      background: #f8fafc !important;
+    }
+
+    html.light #resultContainer .glass-panel {
+      background: rgba(238, 242, 255, 0.85) !important;
+      border-color: rgba(99, 102, 241, 0.25) !important;
+      color: #1e1b4b !important;
+    }
+
+    html.light .dropzone-box {
+      background: rgba(255, 255, 255, 0.8) !important;
+      border-color: rgba(99, 102, 241, 0.35) !important;
+    }
+    html.light .dropzone-box:hover, html.light .dropzone-box.drag-over {
+      background: rgba(238, 242, 255, 0.75) !important;
+    }
+
+    html.light select, 
+    html.light input[type="text"] {
+      background-color: rgba(248, 250, 252, 0.98) !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    /* ── Custom Scrollbar ── */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    ::-webkit-scrollbar-thumb { background: rgba(150, 150, 160, 0.25); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(150, 150, 160, 0.45); }
 
-    /* Markdown Formatted Content Typography */
-    .prose-custom {
-      font-size: 0.915rem;
-      line-height: 1.65;
-      color: #d4d4d8;
+    /* ── Logo Animation ── */
+    .logo-icon-box {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-vivid), #a78bfa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 15px;
+      box-shadow: 0 0 20px var(--accent-glow);
+      animation: logoPulse 3s ease-in-out infinite;
+      position: relative;
     }
-    .prose-custom p { margin-bottom: 0.85rem; }
-    .prose-custom p:last-child { margin-bottom: 0; }
-    .prose-custom h1, .prose-custom h2, .prose-custom h3, .prose-custom h4 {
+    .logo-icon-box::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(129, 140, 248, 0.35);
+      animation: logoRing 3s ease-in-out infinite;
+    }
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+      50% { box-shadow: 0 0 35px var(--accent-glow), 0 0 60px rgba(99, 102, 241, 0.2); }
+    }
+    @keyframes logoRing {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.15); opacity: 0; }
+    }
+
+    /* ── Status Pills & Dots ── */
+    .live-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: rgba(52, 211, 153, 0.1);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      font-size: 11px;
+      color: var(--success);
       font-weight: 600;
-      color: #fafafa;
-      letter-spacing: -0.02em;
-      margin-top: 1.25rem;
-      margin-bottom: 0.5rem;
     }
-    .prose-custom h1 { font-size: 1.25rem; }
-    .prose-custom h2 { font-size: 1.1rem; }
-    .prose-custom h3 { font-size: 1.0rem; }
-    .prose-custom ul {
-      list-style-type: disc;
-      margin-left: 1.35rem;
-      margin-bottom: 0.85rem;
+    .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: dotPulse 2s ease-in-out infinite;
     }
-    .prose-custom ol {
-      list-style-type: decimal;
-      margin-left: 1.35rem;
-      margin-bottom: 0.85rem;
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
     }
-    .prose-custom li { margin-bottom: 0.35rem; }
-    .prose-custom strong { color: #ffffff; font-weight: 600; }
-    .prose-custom hr { border-color: #27272a; margin: 1.25rem 0; }
-    .prose-custom code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.825rem;
-      background: #18181b;
-      border: 1px solid #27272a;
-      color: #93c5fd;
-      padding: 0.15rem 0.35rem;
-      border-radius: 0.375rem;
-    }
-    .prose-custom pre {
-      background: #121215;
-      border: 1px solid #27272a;
-      border-radius: 0.5rem;
-      padding: 0.85rem 1rem;
-      overflow-x: auto;
-      margin-bottom: 0.85rem;
-    }
-    .prose-custom pre code {
-      background: transparent;
+
+    /* ── Action Buttons ── */
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--accent-vivid), #7c3aed);
+      color: white;
+      font-weight: 600;
       border: none;
-      padding: 0;
-      color: #e4e4e7;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .prose-custom table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      margin: 1rem 0;
-      background: #121215;
-      border-radius: 0.5rem;
+    .btn-gradient:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.55), 0 0 12px rgba(129, 140, 248, 0.4);
+    }
+    .btn-gradient:active { transform: translateY(0); }
+
+    .nav-btn {
+      transition: all 0.22s ease;
+      position: relative;
+    }
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.12));
+      border: 1px solid rgba(129, 140, 248, 0.3);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(99, 102, 241, 0.15);
+    }
+    .nav-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    /* ── 3-State Collapsible Sidebar Engine ── */
+    #sidebar {
+      width: 264px;
+      min-width: 264px;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, padding 0.25s ease;
+      will-change: width, transform;
+    }
+
+    #sidebar.mode-icons {
+      width: 68px;
+      min-width: 68px;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    #sidebar.mode-icons .sidebar-brand-text,
+    #sidebar.mode-icons .nav-label,
+    #sidebar.mode-icons .sidebar-header-text,
+    #sidebar.mode-icons .doc-text,
+    #sidebar.mode-icons .doc-badge,
+    #sidebar.mode-icons .sidebar-footer-stats {
+      opacity: 0;
+      max-width: 0;
       overflow: hidden;
-      border: 1px solid #27272a;
+      white-space: nowrap;
+      pointer-events: none;
+      display: none;
     }
-    .prose-custom th, .prose-custom td {
-      border: 1px solid #27272a;
-      padding: 0.6rem 0.85rem;
-      text-align: left;
+
+    #sidebar.mode-icons .sidebar-brand-box {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
     }
-    .prose-custom th {
-      background: #18181b;
-      font-weight: 600;
-      color: #f4f4f5;
+
+    #sidebar.mode-icons .nav-btn {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+      width: 100%;
     }
-    .prose-custom tr:nth-child(even) {
-      background: #141418;
+
+    #sidebar.mode-icons .sidebar-doc-item {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    #sidebar.mode-icons .sidebar-header-section {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    #sidebar.mode-icons:hover,
+    #sidebar.mode-icons.hover-open {
+      width: 264px !important;
+      min-width: 264px !important;
+      padding-left: 0.875rem;
+      padding-right: 0.875rem;
+      box-shadow: 20px 0 60px rgba(0, 0, 0, 0.75), 0 0 35px rgba(99, 102, 241, 0.25);
+      z-index: 45;
+    }
+
+    #sidebar.mode-icons:hover .sidebar-brand-text,
+    #sidebar.mode-icons.hover-open .sidebar-brand-text,
+    #sidebar.mode-icons:hover .nav-label,
+    #sidebar.mode-icons.hover-open .nav-label,
+    #sidebar.mode-icons:hover .sidebar-header-text,
+    #sidebar.mode-icons.hover-open .sidebar-header-text,
+    #sidebar.mode-icons:hover .doc-text,
+    #sidebar.mode-icons.hover-open .doc-text,
+    #sidebar.mode-icons:hover .doc-badge,
+    #sidebar.mode-icons.hover-open .doc-badge,
+    #sidebar.mode-icons:hover .sidebar-footer-stats,
+    #sidebar.mode-icons.hover-open .sidebar-footer-stats {
+      display: block;
+      opacity: 1;
+      max-width: 200px;
+      pointer-events: auto;
+    }
+
+    #sidebar.mode-icons:hover .sidebar-brand-box,
+    #sidebar.mode-icons.hover-open .sidebar-brand-box {
+      justify-content: flex-start;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    #sidebar.mode-icons:hover .nav-btn,
+    #sidebar.mode-icons.hover-open .nav-btn {
+      justify-content: flex-start;
+      padding-left: 0.875rem;
+      padding-right: 0.875rem;
+    }
+
+    #sidebar.mode-icons:hover .sidebar-doc-item,
+    #sidebar.mode-icons.hover-open .sidebar-doc-item {
+      justify-content: space-between;
+      padding-left: 0.625rem;
+      padding-right: 0.625rem;
+    }
+
+    #sidebar.mode-icons:hover .sidebar-header-section,
+    #sidebar.mode-icons.hover-open .sidebar-header-section {
+      justify-content: space-between;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    #sidebar.mode-hidden {
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border-right-width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        position: fixed;
+        left: 0;
+        top: 56px;
+        bottom: 0;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 280px !important;
+        min-width: 280px !important;
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.6);
+      }
+      #sidebar.open {
+        transform: translateX(0);
+      }
     }
   </style>
 </head>
-<body class="h-screen flex flex-col bg-surface-200 antialiased overflow-hidden select-none">
+<body class="h-screen flex flex-col antialiased select-none">
 
-  <!-- Minimalist Top Navigation Header -->
-  <header class="h-14 border-b border-surface-border bg-surface-100/90 backdrop-blur px-5 flex items-center justify-between shrink-0 z-30">
+  <!-- Ambient Floating Orbs -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
+  <!-- Multi-Mode Visual Background Canvas -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- Spaceship Cursor & Trailing Ion Engine Canvas -->
+  <canvas id="cursorTrailCanvas"></canvas>
+  <div id="spaceshipCursor">
+    <div class="ship-reticle"></div>
+    <div class="ship-wrapper" id="shipWrapper">
+      <svg class="ship-model" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="shipHull" x1="16" y1="2" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="45%" stop-color="#cbd5e1" />
+            <stop offset="100%" stop-color="#334155" />
+          </linearGradient>
+          <linearGradient id="shipWing" x1="16" y1="10" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#6366f1" />
+            <stop offset="60%" stop-color="#4338ca" />
+            <stop offset="100%" stop-color="#1e1b4b" />
+          </linearGradient>
+          <linearGradient id="shipGlass" x1="16" y1="7" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#67e8f9" />
+            <stop offset="100%" stop-color="#0284c7" />
+          </linearGradient>
+        </defs>
+
+        <!-- Main Wing Delta -->
+        <path d="M16 2.5 L22 16 L29 22.5 L24 23.5 L20.5 27 L16 24.5 L11.5 27 L8 23.5 L3 22.5 L10 16 Z" fill="url(#shipWing)" stroke="rgba(255,255,255,0.25)" stroke-width="0.7" stroke-linejoin="round" />
+
+        <!-- Wing Energy Edges (Cyan glow lines) -->
+        <path d="M16 2.5 L29 22.5 L24.5 23.5 L16 15 Z" fill="rgba(56, 189, 248, 0.35)" />
+        <path d="M16 2.5 L3 22.5 L7.5 23.5 L16 15 Z" fill="rgba(56, 189, 248, 0.35)" />
+
+        <!-- Center Fuselage Core -->
+        <path d="M16 1.5 L19.5 14 L18 24.5 L16 23.5 L14 24.5 L12.5 14 Z" fill="url(#shipHull)" stroke="#94a3b8" stroke-width="0.5" stroke-linejoin="round" />
+
+        <!-- Cockpit Glass Canopy -->
+        <path d="M16 6.5 L18 13.5 L16 16.5 L14 13.5 Z" fill="url(#shipGlass)" />
+        <path d="M15.2 8 L16 6.8 L16.8 8 L16 12 Z" fill="#ffffff" opacity="0.75" />
+
+        <!-- Twin Thruster Engine Ports -->
+        <rect x="13.2" y="24" width="1.8" height="2.5" rx="0.5" fill="#38bdf8" />
+        <rect x="17" y="24" width="1.8" height="2.5" rx="0.5" fill="#38bdf8" />
+      </svg>
+      <div class="ship-thruster"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+  <!-- Top Glassmorphic Navigation Header -->
+  <header class="h-16 border-b border-white/[0.08] bg-[rgba(10,10,14,0.78)] backdrop-blur-xl px-4 md:px-6 flex items-center justify-between shrink-0 z-30 relative transition-colors duration-300">
     <div class="flex items-center gap-3">
-      <!-- App Brand Icon -->
-      <div class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-100 shadow-sm font-semibold text-xs">
-        <i class="fa-solid fa-shapes text-brand-400"></i>
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-sm text-zinc-100 tracking-tight">Nexus</span>
-          <span class="text-[10px] font-medium text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/60">RAG Engine</span>
+      <!-- Universal Sidebar Toggle Button on Top -->
+      <button id="sidebarToggleBtn" 
+              onclick="handleSidebarToggleClick()" 
+              ondblclick="handleSidebarToggleDblClick()" 
+              title="Toggle Sidebar: Click for icon dock, Double-click to hide" 
+              class="w-9 h-9 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] hover:border-indigo-500/40 flex items-center justify-center transition group relative shadow-sm">
+        <svg class="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        <span id="toggleModeDot" class="hidden absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-sky-400 shadow-sm shadow-sky-400"></span>
+      </button>
+
+      <!-- Header Brand Identity (Active when sidebar is in icon mode or hidden) -->
+      <div id="headerBrandBadge" class="hidden items-center gap-2.5 cursor-pointer select-none" onclick="setSidebarMode('expanded')">
+        <div class="logo-icon-box" id="headerLogoBox" style="width: 32px; height: 32px; font-size: 13px;" title="Nexus Intelligence (Click to open sidebar)">
+          <i class="fa-solid fa-atom"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-sm tracking-tight">Nexus</span>
+            <span class="text-[9px] font-semibold text-indigo-400 bg-indigo-500/15 px-1.5 py-0.2 rounded-full border border-indigo-500/30">Intelligence</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Active Dataset Scope Capsule -->
-    <div class="flex items-center gap-3">
-      <div class="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
-        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-[11px] font-medium text-zinc-400">FAISS & BM25 Ready</span>
+    <!-- Active Controls: Background FX, Theme Toggle, Settings Logo, Scope Capsule, Profile -->
+    <div class="flex items-center gap-2 md:gap-3">
+      
+      <!-- Visual Background FX Dropdown -->
+      <div class="relative">
+        <button onclick="toggleBgMenu(event)" id="bgMenuBtn" title="Select Interactive Background Visual Style" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs transition">
+          <i class="fa-solid fa-wand-magic-sparkles text-indigo-400 text-xs"></i>
+          <span id="currentBgLabel" class="hidden sm:inline text-[11px] font-semibold">Cyber Grid</span>
+          <i class="fa-solid fa-chevron-down text-[9px]"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div id="bgDropdownMenu" class="hidden absolute right-0 top-full mt-2 w-48 glass-panel rounded-xl p-1.5 shadow-2xl z-50 border border-white/10 space-y-1">
+          <button onclick="setBgEffect('cybergrid')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-500/15 flex items-center gap-2 transition">
+            <span>⚡</span> <span>Cyber Wave Grid</span>
+          </button>
+          <button onclick="setBgEffect('nebula')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-500/15 flex items-center gap-2 transition">
+            <span>🌌</span> <span>Quantum Nebula</span>
+          </button>
+          <button onclick="setBgEffect('warp')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-500/15 flex items-center gap-2 transition">
+            <span>🚀</span> <span>Hyperspace Warp</span>
+          </button>
+          <button onclick="setBgEffect('aurora')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-500/15 flex items-center gap-2 transition">
+            <span>🌊</span> <span>Aurora Borealis</span>
+          </button>
+        </div>
       </div>
 
-      <div class="h-4 w-px bg-zinc-800 hidden sm:block"></div>
+      <!-- Dark / Light Theme Toggle Button -->
+      <button onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light / Dark Theme" class="w-9 h-9 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] hover:border-indigo-500/40 flex items-center justify-center transition group relative shadow-sm">
+        <i id="themeIcon" class="fa-solid fa-moon text-indigo-400 text-xs group-hover:rotate-12 transition-transform"></i>
+      </button>
 
+      <!-- UI Appearance Settings Button (Requested by User) -->
+      <!-- <button onclick="toggleSettingsModal()" id="settingsBtn" title="UI Appearance & Customization Settings" class="w-9 h-9 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] hover:border-indigo-500/40 flex items-center justify-center transition group relative shadow-sm">
+        <i class="fa-solid fa-gear text-indigo-400 text-xs group-hover:rotate-90 transition-transform duration-300"></i>
+      </button> -->
+
+      <div class="h-4 w-px bg-white/[0.1] hidden sm:block"></div>
+
+      <!-- Live Status Pill -->
+      <div class="hidden lg:flex items-center">
+        <div class="live-status-pill">
+          <span class="live-dot"></span>
+          <span>FAISS & BM25 Ready</span>
+        </div>
+      </div>
+
+      <!-- Scope Selector -->
       <div class="relative flex items-center">
-        <span class="text-xs text-zinc-400 mr-2 hidden md:inline">Scope:</span>
+        <span class="text-xs mr-2 hidden md:inline font-medium opacity-80">Scope:</span>
         <div class="relative">
-          <select id="activeDatasetSelect" onchange="handleScopeChange()" class="appearance-none bg-surface-50 border border-surface-border text-xs rounded-lg pl-3 pr-8 py-1.5 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition cursor-pointer">
+          <select id="activeDatasetSelect" onchange="handleScopeChange()" class="appearance-none bg-white/[0.05] border border-white/[0.1] text-xs rounded-xl pl-3 pr-8 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition cursor-pointer hover:border-indigo-500/40 font-medium">
             <option value="">Select Document Scope</option>
             <option value="ALL">All Knowledge Datasets</option>
           </select>
-          <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 pointer-events-none"></i>
+          <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none opacity-60"></i>
         </div>
       </div>
 
       <!-- User Profile Badge & Logout -->
-      <div class="h-4 w-px bg-zinc-800 hidden sm:block"></div>
-      <div id="userProfileChip" class="flex items-center gap-2 pl-1">
-        <div class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center text-[10px] font-semibold">
+      <div class="h-4 w-px bg-white/[0.1] hidden sm:block"></div>
+      <div id="userProfileChip" class="flex items-center gap-2 pl-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2.5 py-1">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center text-[10px] font-bold shadow-sm shadow-indigo-500/50">
           <span id="userInitial">U</span>
         </div>
-        <span id="userNameHeader" class="text-xs text-zinc-300 font-medium hidden md:inline truncate max-w-[100px]">Researcher</span>
-        <button onclick="handleSignOut()" title="Sign out" class="text-zinc-500 hover:text-rose-400 p-1 rounded transition text-xs">
+        <span id="userNameHeader" class="text-xs font-semibold hidden md:inline truncate max-w-[110px]">Researcher</span>
+        <button onclick="handleSignOut()" title="Sign out" class="text-zinc-400 hover:text-rose-400 p-1 rounded-lg transition text-xs hover:bg-rose-500/10">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
         </button>
       </div>
@@ -194,185 +889,224 @@
   </header>
 
   <!-- Main Container -->
-  <div class="flex-1 flex overflow-hidden">
+  <div class="flex-1 flex overflow-hidden relative z-10">
 
-    <!-- Left Collapsible Sidebar -->
-    <aside class="w-64 border-r border-surface-border bg-surface-100 flex flex-col justify-between p-3 shrink-0">
+    <!-- Left Glassmorphic Sidebar (3-State Controlled) -->
+    <aside id="sidebar" class="border-r border-white/[0.08] bg-[rgba(12,12,16,0.85)] backdrop-blur-2xl flex flex-col justify-between p-3.5 shrink-0 z-20 transition-colors duration-300">
       <div class="space-y-4">
+        <!-- Brand Box inside Sidebar (Matches user screenshot) -->
+        <div class="sidebar-brand-box flex items-center gap-3 px-2 py-1 mb-2">
+          <div class="logo-icon-box shrink-0 cursor-pointer" onclick="handleSidebarToggleClick()" title="Nexus Intelligence">
+            <i class="fa-solid fa-atom"></i>
+          </div>
+          <div class="sidebar-brand-text truncate">
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-sm tracking-tight">Nexus</span>
+              <span class="text-[9px] font-semibold text-indigo-400 bg-indigo-500/15 px-1.5 py-0.2 rounded-full border border-indigo-500/30">Intelligence</span>
+            </div>
+            <p class="text-[9px] text-zinc-400 font-mono truncate">Agentic RAG Knowledge Engine</p>
+          </div>
+        </div>
+
         <!-- Main Navigation Items -->
-        <nav class="space-y-1">
-          <button onclick="switchView('workspace')" id="btn-workspace" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-200 bg-zinc-800/80 border border-zinc-700/70 transition text-left">
-            <i class="fa-solid fa-message text-brand-400 w-4 text-center"></i>
-            <span>Research Chat</span>
+        <nav class="space-y-1.5">
+          <button onclick="switchView('workspace')" id="btn-workspace" title="Research Chat" class="nav-btn active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left">
+            <i class="fa-solid fa-message text-indigo-400 w-4 text-center shrink-0"></i>
+            <span class="nav-label truncate">Research Chat</span>
           </button>
           
-          <button onclick="switchView('kb')" id="btn-kb" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
-            <i class="fa-solid fa-book-bookmark text-zinc-400 w-4 text-center"></i>
-            <span>Knowledge Library</span>
+          <button onclick="switchView('kb')" id="btn-kb" title="Knowledge Library" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left">
+            <i class="fa-solid fa-book-bookmark w-4 text-center shrink-0 opacity-70"></i>
+            <span class="nav-label truncate">Knowledge Library</span>
           </button>
 
-          <button onclick="switchView('compare')" id="btn-compare" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
-            <i class="fa-solid fa-code-compare text-zinc-400 w-4 text-center"></i>
-            <span>Multi-Doc Compare</span>
+          <button onclick="switchView('compare')" id="btn-compare" title="Multi-Doc Compare" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left">
+            <i class="fa-solid fa-code-compare w-4 text-center shrink-0 opacity-70"></i>
+            <span class="nav-label truncate">Multi-Doc Compare</span>
           </button>
 
-          <button onclick="switchView('ingestion')" id="btn-ingest" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
-            <i class="fa-solid fa-arrow-up-from-bracket text-zinc-400 w-4 text-center"></i>
-            <span>Upload Documents</span>
+          <button onclick="switchView('ingestion')" id="btn-ingest" title="Upload Documents" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left">
+            <i class="fa-solid fa-arrow-up-from-bracket w-4 text-center shrink-0 opacity-70"></i>
+            <span class="nav-label truncate">Upload Documents</span>
           </button>
 
-          <button onclick="toggleGlobalAI()" id="btn-global" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition text-left">
-            <i class="fa-solid fa-globe text-cyan-400 w-4 text-center"></i>
-            <span>Global Web AI</span>
+          <button onclick="toggleGlobalAI()" id="btn-global" title="Global Web AI" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-left hover:border-cyan-500/30">
+            <i class="fa-solid fa-globe text-cyan-400 w-4 text-center shrink-0"></i>
+            <span class="nav-label truncate">Global Web AI</span>
           </button>
         </nav>
 
         <!-- Quick Document Scope List -->
         <div class="pt-2">
-          <div class="flex items-center justify-between px-2 mb-1.5">
-            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">Active Library</span>
-            <button onclick="syncLocalFolder()" title="Rescan local folders" class="text-zinc-500 hover:text-zinc-300 text-xs transition">
+          <div class="sidebar-header-section flex items-center justify-between px-2 mb-2">
+            <span class="sidebar-header-text text-[10px] font-bold uppercase tracking-wider opacity-75">Active Library</span>
+            <button onclick="syncLocalFolder()" title="Rescan local folders" class="hover:text-indigo-400 text-xs transition p-1 hover:bg-white/[0.05] rounded-md shrink-0 opacity-75 hover:opacity-100">
               <i class="fa-solid fa-arrows-rotate"></i>
             </button>
           </div>
-          <div id="sidebarDocList" class="space-y-1 max-h-48 overflow-y-auto pr-1">
-            <div class="text-[11px] text-zinc-500 px-2 py-1">Loading library...</div>
+          <div id="sidebarDocList" class="space-y-1 max-h-52 overflow-y-auto pr-1">
+            <div class="text-[11px] opacity-60 px-2 py-1">Loading library...</div>
           </div>
         </div>
       </div>
 
       <!-- Bottom System Status Pill -->
-      <div class="p-3 rounded-lg bg-surface-50 border border-surface-border text-xs space-y-1.5">
+      <div class="sidebar-footer-stats p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] text-zinc-400">Synthesis Engine</span>
-          <span class="text-[10px] text-zinc-300 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">Gemini 3.6</span>
+          <span class="text-[11px] font-medium opacity-75">Synthesis LLM</span>
+          <span class="text-[10px] text-indigo-400 font-mono bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-md font-semibold">Gemini 3.5</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="text-[11px] text-zinc-400">Reranker</span>
-          <span class="text-[10px] text-zinc-300 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">Cross-Encoder</span>
+          <span class="text-[11px] font-medium opacity-75">Reranker</span>
+          <span class="text-[10px] text-purple-400 font-mono bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-md font-semibold">Cross-Encoder</span>
         </div>
       </div>
     </aside>
 
     <!-- Main Dynamic Content Workspace -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-surface-200">
+    <main class="flex-1 flex flex-col overflow-hidden relative">
 
       <!-- ================= VIEW 1: RESEARCH WORKSPACE ================= -->
       <section id="view-workspace" class="flex-1 flex flex-col h-full overflow-hidden">
         
         <!-- Conversation Feed / Response Viewer -->
-        <div id="chatFeed" class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full">
+        <div id="chatFeed" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 max-w-4xl mx-auto w-full">
           
           <!-- Empty State Hero (shown before queries) -->
-          <div id="welcomeState" class="text-center py-16 space-y-4">
-            <div class="inline-flex w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 items-center justify-center text-zinc-300 text-lg shadow-inner">
-              <i class="fa-solid fa-sparkles text-brand-400"></i>
+          <div id="welcomeState" class="text-center py-12 md:py-16 space-y-6">
+            <div class="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/10 to-sky-500/20 border border-indigo-500/30 items-center justify-center text-2xl shadow-xl shadow-indigo-500/10 relative">
+              <i class="fa-solid fa-sparkles text-indigo-400"></i>
             </div>
-            <div class="space-y-1">
-              <h2 class="text-xl font-semibold text-zinc-100 tracking-tight">Ask your document repository</h2>
-              <p class="text-xs text-zinc-400 max-w-md mx-auto">
-                Hybrid vector search combined with neural BM25 and Cross-Encoder reranking ensures exact citation accuracy.
+            
+            <div class="space-y-2">
+              <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">
+                Ask your document repository
+              </h2>
+              <p class="text-xs md:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
+                Hybrid vector embeddings combined with neural BM25 and Cross-Encoder reranking ensures exact citation accuracy and grounded answers.
               </p>
             </div>
 
             <!-- Quick Suggestion Pills -->
-            <div class="flex flex-wrap justify-center gap-2 pt-2 max-w-lg mx-auto">
-              <button onclick="setQuery('What was the Mean Reciprocal Rank (MRR@10) of the Cross-Encoder?')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
-                "What was the MRR@10 of the Cross-Encoder?"
+            <div class="flex flex-wrap justify-center gap-2.5 pt-2 max-w-xl mx-auto">
+              <button onclick="setQuery('What was the Mean Reciprocal Rank (MRR@10) of the Cross-Encoder?')" class="suggestion-chip text-xs px-3.5 py-2 rounded-xl">
+                <i class="fa-regular fa-lightbulb text-indigo-400 mr-1.5"></i> "What was the MRR@10 of the Cross-Encoder?"
               </button>
-              <button onclick="setQuery('Explain the system architecture and its micro-agents.')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
-                "Explain the system architecture"
+              <button onclick="setQuery('Explain the system architecture and its micro-agents.')" class="suggestion-chip text-xs px-3.5 py-2 rounded-xl">
+                <i class="fa-regular fa-lightbulb text-indigo-400 mr-1.5"></i> "Explain the system architecture"
               </button>
-              <button onclick="setQuery('Show performance metrics in a structured table')" class="text-xs px-3 py-1.5 rounded-full bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700/60 text-zinc-300 hover:text-zinc-100 transition">
-                "Show performance metrics table"
+              <button onclick="setQuery('Show performance metrics in a structured table')" class="suggestion-chip text-xs px-3.5 py-2 rounded-xl">
+                <i class="fa-regular fa-lightbulb text-indigo-400 mr-1.5"></i> "Show performance metrics table"
               </button>
             </div>
           </div>
 
           <!-- Active Result Card Container (hidden initially) -->
-          <div id="resultContainer" class="hidden space-y-5">
+          <div id="resultContainer" class="hidden space-y-6">
             <!-- User Query Bubble -->
             <div class="flex items-start justify-end gap-3">
-              <div class="bg-zinc-800 text-zinc-100 px-4 py-2.5 rounded-2xl max-w-xl text-sm border border-zinc-700/50 font-normal">
+              <div class="glass-panel px-5 py-3 rounded-2xl max-w-xl text-sm font-normal border border-indigo-500/25 shadow-lg">
                 <span id="displayUserQuery"></span>
+              </div>
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md shadow-indigo-500/30">
+                <i class="fa-solid fa-user"></i>
               </div>
             </div>
 
-            <!-- Assistant Answer Card -->
-            <div class="bg-surface-100 border border-surface-border rounded-xl p-5 space-y-4 shadow-sm">
-              <!-- Header & Metadata Action Bar -->
-              <div class="flex items-center justify-between border-b border-surface-border pb-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center text-xs">
-                    <i class="fa-solid fa-feather"></i>
+            <!-- Assistant Answer Card with Animated Conic Border -->
+            <div class="card-glow-wrapper rounded-2xl">
+              <div class="card-glow-border"></div>
+              
+              <div class="glass-panel rounded-2xl p-6 space-y-5 relative z-10">
+                <!-- Header & Action Bar -->
+                <div class="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white text-xs shadow-md shadow-indigo-500/40">
+                      <i class="fa-solid fa-feather"></i>
+                    </div>
+                    <span class="text-xs font-bold tracking-tight">Grounded Synthesis</span>
                   </div>
-                  <span class="text-xs font-semibold text-zinc-200">Grounded Synthesis</span>
+
+                  <div class="flex items-center gap-2">
+                    <span id="responseStatusTag" class="text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-lg shadow-sm shadow-emerald-500/20">
+                      Verified Grounded
+                    </span>
+                    <button onclick="copyAnswerText()" title="Copy answer" class="hover:opacity-100 opacity-70 p-1.5 rounded-lg transition text-xs hover:bg-white/[0.06]">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                  <span id="responseStatusTag" class="text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-md">
-                    Verified Grounded
-                  </span>
-                  <button onclick="copyAnswerText()" title="Copy answer" class="text-zinc-400 hover:text-zinc-200 p-1.5 rounded transition text-xs">
-                    <i class="fa-regular fa-copy"></i>
+                <!-- Collapsible Execution & Inspection Accordion -->
+                <div id="traceAccordion" class="rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs overflow-hidden">
+                  <button onclick="toggleTraceDetails()" class="w-full px-4 py-2.5 flex items-center justify-between hover:opacity-100 opacity-80 transition hover:bg-white/[0.02]">
+                    <span class="flex items-center gap-2 font-mono text-[11px]">
+                      <i class="fa-solid fa-microchip text-indigo-400"></i>
+                      <span id="traceSummaryLabel">Retrieval & Rerank Trace</span>
+                    </span>
+                    <i id="traceChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+                  </button>
+                  <div id="traceContent" class="hidden px-4 pb-3.5 pt-1 border-t border-white/[0.06] space-y-2 text-[11px] font-mono opacity-80 bg-black/10">
+                    <!-- Step items injected here -->
+                  </div>
+                </div>
+
+                <!-- Markdown Output Content -->
+                 <!-- Content Reader (Tap to Read Aloud) -->
+            
+                <div class="flex justify-end mb-2">
+                  <button type="button" onclick="readAloudGrounded(this)" title="Read Aloud"
+                          class="text-[11px] text-gray-400 hover:text-indigo-400 bg-gray-800/80 hover:bg-gray-700 px-2.5 py-1 rounded-md transition flex items-center gap-1.5 border border-gray-700/50">
+                      <i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>
                   </button>
                 </div>
-              </div>
-
-              <!-- Collapsible Execution & Inspection Accordion -->
-              <div id="traceAccordion" class="rounded-lg bg-surface-50 border border-surface-border text-xs overflow-hidden">
-                <button onclick="toggleTraceDetails()" class="w-full px-3.5 py-2 flex items-center justify-between text-zinc-400 hover:text-zinc-200 transition">
-                  <span class="flex items-center gap-2 font-mono text-[11px]">
-                    <i class="fa-solid fa-list-check text-brand-400"></i>
-                    <span id="traceSummaryLabel">Retrieval & Rerank Trace</span>
-                  </span>
-                  <i id="traceChevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
-                </button>
-                <div id="traceContent" class="hidden px-3.5 pb-3 pt-1 border-t border-surface-border space-y-2 text-[11px] font-mono text-zinc-400">
-                  <!-- Step items injected here -->
+                <div id="groundedAnswerBox" class="prose-custom leading-relaxed">
+                  <!-- Answer parsed into HTML -->
                 </div>
-              </div>
 
-              <!-- Markdown Output Content -->
-              <div id="groundedAnswerBox" class="prose-custom leading-relaxed">
-                <!-- Answer parsed into HTML -->
-              </div>
-
-              <!-- Source Citations Bar -->
-              <div id="citationsBar" class="border-t border-surface-border pt-3 flex flex-wrap items-center gap-2">
-                <span class="text-[11px] font-medium text-zinc-500">Sources:</span>
-                <div id="citationsList" class="flex flex-wrap items-center gap-1.5">
-                  <!-- Dynamic citations badges -->
+                <!-- Source Citations Bar -->
+                <div id="citationsBar" class="border-t border-white/[0.08] pt-4 flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-semibold opacity-75">Sources:</span>
+                  <div id="citationsList" class="flex flex-wrap items-center gap-2">
+                    <!-- Dynamic citations badges -->
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Floating Command Bar Input -->
-        <div class="p-4 border-t border-surface-border bg-surface-100/60 backdrop-blur shrink-0">
+        <!-- Floating Glassmorphic Command Input Bar (Adaptive Container) -->
+        <div class="input-bar-container p-4 shrink-0 transition-colors duration-300">
           <div class="max-w-4xl mx-auto">
-            <div class="relative bg-surface-50 border border-surface-border focus-within:border-zinc-500 rounded-xl p-2 shadow-lg transition">
+            <div class="relative glass-panel rounded-2xl p-2.5 focus-within:border-indigo-500/60 shadow-2xl transition">
               <textarea 
                 id="ragQueryInput" 
                 rows="1" 
                 placeholder="Ask anything about the selected document... (Press Enter to submit, Shift+Enter for new line)" 
-                class="w-full bg-transparent text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none resize-none px-3 py-2 min-h-[40px] max-h-36"
+                class="w-full bg-transparent text-sm focus:outline-none resize-none px-3.5 py-2 min-h-[44px] max-h-36 leading-normal"
                 onkeydown="handleInputKey(event)"
                 oninput="autoGrow(this)"></textarea>
 
-              <div class="flex items-center justify-between px-2 pt-1 border-t border-surface-borderSubtle">
+              <div class="flex items-center justify-between px-2 pt-1.5 border-t border-white/[0.06]">
                 <div class="flex items-center gap-2">
-                  <span id="activeScopeChip" class="text-[11px] text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded border border-zinc-700/60">
-                    <i class="fa-regular fa-file-lines text-brand-400 mr-1"></i>
+                  <span id="activeScopeChip" class="text-[11px] px-2.5 py-1 rounded-lg border flex items-center transition font-medium">
+                    <i class="fa-regular fa-file-lines text-indigo-400 mr-1.5"></i>
                     <span id="activeScopeName">Select document</span>
                   </span>
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <button onclick="runRAGSearch()" id="executeBtn" class="flex items-center gap-1.5 bg-zinc-100 hover:bg-white text-zinc-950 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+                  <div>
+                    <!-- Voice Input Button (Tap to Speak) -->
+                    <button type="button" id="micBtn" onclick="startVoiceInput()" title="Voice Input (Tap to Speak)"
+                            class="text-gray-400 hover:text-cyan-400 px-3 py-2 transition flex items-center">
+                        <i class="fa-solid fa-microphone text-sm"></i>
+                    </button>
+                  </div>
+                  <button onclick="runRAGSearch()" id="executeBtn" class="btn-gradient flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold">
                     <span>Ask</span>
-                    <kbd class="text-[9px] bg-zinc-300/80 px-1 py-0.5 rounded text-zinc-900 font-mono">⏎</kbd>
+                    <kbd class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono">⏎</kbd>
                   </button>
                 </div>
               </div>
@@ -382,142 +1116,287 @@
       </section>
 
       <!-- ================= VIEW 2: KNOWLEDGE BASE ================= -->
-      <section id="view-kb" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-6xl mx-auto w-full space-y-6">
-        <div class="flex items-center justify-between">
+      <section id="view-kb" class="hidden flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-zinc-100">Knowledge Library</h2>
-            <p class="text-xs text-zinc-400">All local documents committed to SQLite, indexed in FAISS, and tokenized for BM25 search.</p>
+            <h2 class="text-xl font-bold tracking-tight">Knowledge Library</h2>
+            <p class="text-xs opacity-75">All local documents committed to SQLite, indexed in FAISS, and tokenized for BM25 search.</p>
           </div>
-          <button onclick="syncLocalFolder()" class="flex items-center gap-2 bg-surface-50 hover:bg-zinc-800 border border-surface-border px-3 py-2 rounded-lg text-xs text-zinc-200 transition font-medium">
-            <i class="fa-solid fa-rotate text-zinc-400"></i>
+          <button onclick="syncLocalFolder()" class="flex items-center gap-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] px-3.5 py-2 rounded-xl text-xs transition font-semibold">
+            <i class="fa-solid fa-rotate text-indigo-400"></i>
             <span>Rescan & Sync Directory</span>
           </button>
         </div>
 
         <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden">
-          <!-- Document List Card -->
-          <div class="md:col-span-1 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
-            <div class="p-3.5 border-b border-surface-border font-medium text-xs text-zinc-300">
-              Indexed Documents (<span id="kbDocCount">0</span>)
+          <div class="md:col-span-1 glass-panel rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-white/[0.08] font-semibold text-xs flex items-center justify-between">
+              <span>Indexed Documents</span>
+              <span id="kbDocCount" class="text-[10px] font-mono bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold">0</span>
             </div>
-            <div id="datasetListContainer" class="flex-1 overflow-y-auto p-3 space-y-2">
-              <!-- Injected dataset items -->
+            <div id="datasetListContainer" class="flex-1 overflow-y-auto p-3.5 space-y-2">
             </div>
           </div>
 
-          <!-- Document Chat History Details -->
-          <div class="md:col-span-2 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
-            <div class="p-3.5 border-b border-surface-border flex items-center justify-between">
-              <span id="kbHistoryTitle" class="font-medium text-xs text-zinc-300">Document Query History</span>
+          <div class="md:col-span-2 glass-panel rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-white/[0.08] flex items-center justify-between">
+              <span id="kbHistoryTitle" class="font-semibold text-xs">Document Query History</span>
             </div>
-            <div id="kbHistoryContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
-              <p class="text-xs text-zinc-500">Select a document from the left to view historical queries and responses.</p>
+            <div id="kbHistoryContainer" class="flex-1 overflow-y-auto p-5 space-y-3">
+              <p class="text-xs opacity-60">Select a document from the left to view historical queries and responses.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- ================= VIEW 3: MULTI-PAPER COMPARE ================= -->
-      <section id="view-compare" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+      <section id="view-compare" class="hidden flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
         <div>
-          <h2 class="text-lg font-semibold text-zinc-100">Multi-Document Comparative Analysis</h2>
-          <p class="text-xs text-zinc-400">Synthesize direct comparisons across two distinct indexed papers or data tables.</p>
+          <h2 class="text-xl font-bold tracking-tight">Multi-Document Comparative Analysis</h2>
+          <p class="text-xs opacity-75">Synthesize direct comparisons across two distinct indexed papers or data tables.</p>
         </div>
 
-        <!-- Comparative Setup Card -->
-        <div class="bg-surface-100 border border-surface-border rounded-xl p-5 space-y-4">
+        <div class="glass-panel rounded-2xl p-6 space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="text-xs font-medium text-zinc-300">Document A</label>
-              <select id="compareDocA" class="w-full bg-surface-50 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500">
+              <label class="text-xs font-semibold">Document A</label>
+              <select id="compareDocA" class="w-full border rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-indigo-500">
               </select>
             </div>
             <div class="space-y-1.5">
-              <label class="text-xs font-medium text-zinc-300">Document B</label>
-              <select id="compareDocB" class="w-full bg-surface-50 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500">
+              <label class="text-xs font-semibold">Document B</label>
+              <select id="compareDocB" class="w-full border rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-indigo-500">
               </select>
             </div>
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-medium text-zinc-300">Comparative Inquiry</label>
-            <div class="flex gap-2">
+            <label class="text-xs font-semibold">Comparative Inquiry</label>
+            <div class="flex gap-2.5">
               <input id="compareQuery" type="text" placeholder="e.g. Compare the retrieval latency and accuracy metrics between both papers..." 
-                     class="flex-1 bg-surface-50 border border-surface-border rounded-lg px-3.5 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-brand-500"
+                     class="flex-1 border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-indigo-500"
                      onkeydown="if(event.key==='Enter') runCompare()">
-              <button onclick="runCompare()" id="btnRunCompare" class="bg-zinc-100 hover:bg-white text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold transition">
+              <button onclick="runCompare()" id="btnRunCompare" class="btn-gradient px-5 py-2.5 rounded-xl text-xs font-semibold">
                 Compare
               </button>
             </div>
           </div>
         </div>
 
-        <!-- History Container -->
-        <div class="flex-1 bg-surface-100 border border-surface-border rounded-xl flex flex-col overflow-hidden">
-          <div class="p-3.5 border-b border-surface-border font-medium text-xs text-zinc-300">
+        <div class="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden">
+          <div class="p-4 border-b border-white/[0.08] font-semibold text-xs">
             Comparison Results & History
           </div>
-          <div id="compareHistoryContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <p class="text-xs text-zinc-500">No comparative sessions run yet.</p>
+          <div id="compareHistoryContainer" class="flex-1 overflow-y-auto p-5 space-y-3">
+            <p class="text-xs opacity-60">No comparative sessions run yet.</p>
           </div>
         </div>
       </section>
 
       <!-- ================= VIEW 4: DOCUMENT INGESTION ================= -->
-      <section id="view-ingestion" class="hidden flex-1 flex flex-col h-full overflow-hidden p-6 md:p-8 max-w-4xl mx-auto w-full space-y-6">
+      <section id="view-ingestion" class="hidden flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8 max-w-4xl mx-auto w-full space-y-6">
         <div>
-          <h2 class="text-lg font-semibold text-zinc-100">Document & OCR Ingestion</h2>
-          <p class="text-xs text-zinc-400">Upload documents to extract, chunk, embed into FAISS, and tokenize for BM25.</p>
+          <h2 class="text-xl font-bold tracking-tight">Document & OCR Ingestion</h2>
+          <p class="text-xs opacity-75">Upload documents to extract, chunk, embed into FAISS, and tokenize for BM25.</p>
         </div>
 
-        <!-- Upload Dropzone -->
-        <div class="border-2 border-dashed border-surface-border hover:border-zinc-500 bg-surface-100/50 hover:bg-surface-100 rounded-2xl p-12 text-center transition cursor-pointer flex flex-col items-center justify-center space-y-3"
+        <div class="dropzone-box rounded-3xl p-10 md:p-14 text-center cursor-pointer flex flex-col items-center justify-center space-y-4"
              onclick="document.getElementById('fileUploadInput').click()">
           <input type="file" id="fileUploadInput" class="hidden" onchange="uploadSelectedFile(this)" accept=".pdf,.docx,.doc,.csv,.xlsx,.xls,.txt,.md">
-          <div class="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-300 text-lg">
-            <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-sky-500/20 border border-indigo-500/30 flex items-center justify-center text-2xl shadow-xl shadow-indigo-500/10">
+            <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i>
           </div>
           <div class="space-y-1">
-            <p class="text-sm font-medium text-zinc-200">Click or drag documents to index</p>
-            <p class="text-xs text-zinc-500">Supports PDF (with Table OCR), DOCX, CSV, Excel, TXT, and Markdown</p>
+            <p class="text-base font-semibold">Click or drag documents to index</p>
+            <p class="text-xs opacity-75">Supports PDF (with Table OCR), DOCX, CSV, Excel, TXT, and Markdown</p>
           </div>
-          <span class="inline-block mt-2 text-[10px] bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full border border-zinc-700">
+          <span class="inline-block mt-2 text-[11px] bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 px-3.5 py-1 rounded-full font-mono font-semibold">
             Auto-chunked at 500 tokens with 100 overlap
           </span>
         </div>
 
-        <div id="uploadStatus" class="text-xs text-center font-medium min-h-[20px]"></div>
+        <div id="uploadStatus" class="text-xs text-center font-medium min-h-[24px]"></div>
       </section>
 
     </main>
   </div>
 
+  <!-- ═════════════════════════════════════════════════
+       UI APPEARANCE STUDIO SETTINGS MODAL (Requested)
+  ═════════════════════════════════════════════════ -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="card-glow-wrapper w-full max-w-xl">
+      <div class="card-glow-border"></div>
+      
+      <div class="glass-panel rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden relative z-10">
+        <!-- Settings Header -->
+        <div class="p-5 border-b border-white/[0.08] flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm shadow-md">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold tracking-tight">Appearance Studio</h3>
+              <p class="text-[11px] opacity-70">Personalize theme, visual background, accents & cursor</p>
+            </div>
+          </div>
+          <button onclick="toggleSettingsModal()" class="w-8 h-8 rounded-lg hover:bg-white/[0.08] flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Settings Body -->
+        <div class="p-6 overflow-y-auto space-y-6 text-xs">
+          
+          <!-- 1. Color Theme Mode -->
+          <div class="space-y-2.5">
+            <label class="font-bold text-xs flex items-center gap-2">
+              <i class="fa-solid fa-circle-half-stroke text-indigo-400"></i>
+              <span>Theme Mode</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="applyTheme('dark')" id="themeOptDark" class="p-3.5 rounded-xl border border-white/[0.1] hover:border-indigo-500 flex items-center gap-3 transition text-left group">
+                <i class="fa-solid fa-moon text-indigo-400 text-base"></i>
+                <div>
+                  <p class="font-bold">Dark Cosmic</p>
+                  <p class="text-[10px] opacity-60">Deep obsidian & glowing neon</p>
+                </div>
+              </button>
+              <button onclick="applyTheme('light')" id="themeOptLight" class="p-3.5 rounded-xl border border-white/[0.1] hover:border-indigo-500 flex items-center gap-3 transition text-left group">
+                <i class="fa-solid fa-sun text-amber-500 text-base"></i>
+                <div>
+                  <p class="font-bold">Light Crystal</p>
+                  <p class="text-[10px] opacity-60">Frosted slate with high contrast</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Background Visual Style -->
+          <div class="space-y-2.5">
+            <label class="font-bold text-xs flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+              <span>Interactive Background Style</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <button onclick="setBgEffect('cybergrid')" class="p-3 rounded-xl border border-white/[0.08] hover:border-indigo-500 flex items-center gap-2.5 text-left transition">
+                <span class="text-base">⚡</span>
+                <div>
+                  <p class="font-bold">Cyber Wave Grid</p>
+                  <p class="text-[10px] opacity-60">3D dynamic wave mesh</p>
+                </div>
+              </button>
+              <button onclick="setBgEffect('nebula')" class="p-3 rounded-xl border border-white/[0.08] hover:border-indigo-500 flex items-center gap-2.5 text-left transition">
+                <span class="text-base">🌌</span>
+                <div>
+                  <p class="font-bold">Quantum Nebula</p>
+                  <p class="text-[10px] opacity-60">Synapse network & stars</p>
+                </div>
+              </button>
+              <button onclick="setBgEffect('warp')" class="p-3 rounded-xl border border-white/[0.08] hover:border-indigo-500 flex items-center gap-2.5 text-left transition">
+                <span class="text-base">🚀</span>
+                <div>
+                  <p class="font-bold">Hyperspace Warp</p>
+                  <p class="text-[10px] opacity-60">3D star streaks & velocity</p>
+                </div>
+              </button>
+              <button onclick="setBgEffect('aurora')" class="p-3 rounded-xl border border-white/[0.08] hover:border-indigo-500 flex items-center gap-2.5 text-left transition">
+                <span class="text-base">🌊</span>
+                <div>
+                  <p class="font-bold">Aurora Borealis</p>
+                  <p class="text-[10px] opacity-60">Flowing cosmic ribbons</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Background Opacity Slider -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-xs flex items-center gap-2">
+                <i class="fa-solid fa-eye text-indigo-400"></i>
+                <span>Background Brightness & Opacity</span>
+              </label>
+              <span id="opacityValLabel" class="font-mono text-[11px] opacity-75">100%</span>
+            </div>
+            <input type="range" id="bgOpacitySlider" min="15" max="100" value="100" oninput="handleOpacitySlide(this.value)" class="w-full accent-indigo-500 cursor-pointer">
+          </div>
+
+          <!-- 4. Accent Color Palette -->
+          <div class="space-y-2.5">
+            <label class="font-bold text-xs flex items-center gap-2">
+              <i class="fa-solid fa-palette text-indigo-400"></i>
+              <span>Accent Color Palette</span>
+            </label>
+            <div class="flex items-center gap-3">
+              <button onclick="setAccentColor('indigo')" title="Electric Indigo" class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white/20 hover:scale-110 transition-transform shadow-md"></button>
+              <button onclick="setAccentColor('cyan')" title="Cyber Cyan" class="w-8 h-8 rounded-full bg-sky-400 border-2 border-white/20 hover:scale-110 transition-transform shadow-md"></button>
+              <button onclick="setAccentColor('purple')" title="Cosmic Purple" class="w-8 h-8 rounded-full bg-purple-500 border-2 border-white/20 hover:scale-110 transition-transform shadow-md"></button>
+              <button onclick="setAccentColor('emerald')" title="Matrix Emerald" class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white/20 hover:scale-110 transition-transform shadow-md"></button>
+              <button onclick="setAccentColor('amber')" title="Solar Amber" class="w-8 h-8 rounded-full bg-amber-500 border-2 border-white/20 hover:scale-110 transition-transform shadow-md"></button>
+            </div>
+          </div>
+
+          <!-- 5. Spaceship Cursor Toggle -->
+          <div class="p-3.5 rounded-xl border border-white/[0.08] flex items-center justify-between">
+            <div>
+              <p class="font-bold text-xs">Spaceship Interceptor Cursor</p>
+              <p class="text-[10px] opacity-60">Interactive flight craft with ion thruster particle trails</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="cursorToggleInput" checked onchange="toggleSpaceshipCursor(this.checked)" class="sr-only peer">
+              <div class="w-10 h-5 bg-white/[0.1] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
+        </div>
+
+        <!-- Settings Footer -->
+        <div class="p-4 border-t border-white/[0.08] flex items-center justify-end">
+          <button onclick="toggleSettingsModal()" class="btn-gradient px-5 py-2 rounded-xl text-xs font-semibold">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Global AI Modal Dialog -->
-  <div id="globalAiModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="w-full max-w-2xl bg-surface-100 border border-surface-border rounded-2xl flex flex-col max-h-[85vh] shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-surface-border flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-globe text-cyan-400"></i>
-          <span class="text-sm font-semibold text-zinc-100">Global AI (DuckDuckGo + Wikipedia)</span>
+  <div id="globalAiModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="card-glow-wrapper w-full max-w-2xl">
+      <div class="card-glow-border"></div>
+      
+      <div class="glass-panel rounded-2xl flex flex-col max-h-[85vh] shadow-2xl overflow-hidden relative z-10">
+        <div class="p-4 border-b border-white/[0.08] flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-globe"></i>
+            </div>
+            <span class="text-sm font-bold">Global Web AI (DuckDuckGo + Wikipedia)</span>
+          </div>
+          <button onclick="toggleGlobalAI()" class="w-8 h-8 rounded-lg hover:bg-white/[0.08] flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
         </div>
-        <button onclick="toggleGlobalAI()" class="text-zinc-400 hover:text-zinc-200 p-1 text-xs">
-          <i class="fa-solid fa-xmark text-sm"></i>
-        </button>
-      </div>
 
-      <div id="globalChatContainer" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs min-h-[300px]">
-        <div class="text-zinc-400 bg-surface-50 p-3 rounded-lg border border-surface-border text-xs">
-          Ask questions outside your document repository. The system retrieves external web knowledge and synthesizes responses using Gemini.
+        <div id="globalChatContainer" class="flex-1 overflow-y-auto p-5 space-y-3 text-xs min-h-[300px]">
+          <div class="bg-white/[0.04] p-3.5 rounded-xl border border-white/[0.08] text-xs leading-relaxed">
+            <i class="fa-solid fa-circle-info text-cyan-400 mr-1.5"></i> Ask questions outside your document repository. The system retrieves external live web knowledge and synthesizes responses using Gemini.
+          </div>
         </div>
-      </div>
 
-      <div class="p-3 border-t border-surface-border bg-surface-50 flex gap-2">
-        <input id="globalInput" type="text" placeholder="Ask anything globally..." 
-               class="flex-1 bg-surface-100 border border-surface-border rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-brand-500"
-               onkeydown="if(event.key==='Enter') sendGlobalQuery()">
-        <button onclick="sendGlobalQuery()" class="bg-zinc-100 hover:bg-white text-zinc-950 px-4 py-2 rounded-lg text-xs font-semibold transition">
-          Send
-        </button>
+        <div class="p-3.5 border-t border-white/[0.08] bg-white/[0.02] flex gap-2.5">
+          <input id="globalInput" type="text" placeholder="Ask anything globally..." 
+                 class="w-full bg-white text-slate-900 border border-slate-300 dark:bg-slate-800 dark:text-white dark:border-slate-700 rounded-xl pl-4 pr-24 py-3 text-sm focus:outline-none"
+                 onkeydown="if(event.key==='Enter') sendGlobalQuery()">
+
+          <button id="globalMicBtn" type="button" onclick="startGlobalVoiceInput()" class="p-2 text-slate-400 hover:text-white transition" title="Voice Input">
+            <i class="fa-solid fa-microphone text-sm"></i>
+          </button>
+          <button onclick="sendGlobalQuery()" class="btn-gradient px-5 py-2.5 rounded-xl text-xs font-semibold">
+            Send
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -551,8 +1430,260 @@
       }
     }
 
-    let lastAnswerRaw = "";
+    /* ═════════════════════════════════════════════════
+       DARK & LIGHT THEME ENGINE
+    ═════════════════════════════════════════════════ */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('nexus_theme') || 'dark';
+      applyTheme(savedTheme);
+    }
 
+    function applyTheme(theme) {
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      
+      if (theme === 'light') {
+        html.classList.remove('dark');
+        html.classList.add('light');
+        if (icon) {
+          icon.className = 'fa-solid fa-sun text-amber-500 text-xs group-hover:rotate-45 transition-transform';
+        }
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+        if (icon) {
+          icon.className = 'fa-solid fa-moon text-indigo-400 text-xs group-hover:rotate-12 transition-transform';
+        }
+      }
+      localStorage.setItem('nexus_theme', theme);
+    }
+
+    function toggleTheme() {
+      const isLight = document.documentElement.classList.contains('light');
+      applyTheme(isLight ? 'dark' : 'light');
+    }
+
+    /* ═════════════════════════════════════════════════
+       UI APPEARANCE SETTINGS & CUSTOMIZATION
+    ═════════════════════════════════════════════════ */
+    function toggleSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function setAccentColor(colorKey) {
+      const accents = {
+        'indigo': { base: '#818cf8', vivid: '#6366f1', glow: 'rgba(99, 102, 241, 0.45)' },
+        'cyan': { base: '#38bdf8', vivid: '#0ea5e9', glow: 'rgba(14, 165, 233, 0.45)' },
+        'purple': { base: '#c084fc', vivid: '#a855f7', glow: 'rgba(168, 85, 247, 0.45)' },
+        'emerald': { base: '#34d399', vivid: '#10b981', glow: 'rgba(16, 185, 129, 0.45)' },
+        'amber': { base: '#fbbf24', vivid: '#f59e0b', glow: 'rgba(245, 158, 11, 0.45)' },
+      };
+      const acc = accents[colorKey] || accents['indigo'];
+      document.documentElement.style.setProperty('--accent', acc.base);
+      document.documentElement.style.setProperty('--accent-vivid', acc.vivid);
+      document.documentElement.style.setProperty('--accent-glow', acc.glow);
+      localStorage.setItem('nexus_accent_color', colorKey);
+    }
+
+    function toggleSpaceshipCursor(enable) {
+      const ship = document.getElementById('spaceshipCursor');
+      const trail = document.getElementById('cursorTrailCanvas');
+      if (enable) {
+        document.body.classList.remove('no-custom-cursor');
+        if (ship) ship.style.display = 'block';
+        if (trail) trail.style.display = 'block';
+      } else {
+        document.body.classList.add('no-custom-cursor');
+        if (ship) ship.style.display = 'none';
+        if (trail) trail.style.display = 'none';
+      }
+      localStorage.setItem('nexus_cursor_enabled', enable ? 'true' : 'false');
+    }
+
+    function handleOpacitySlide(val) {
+      const canvas = document.getElementById('particleCanvas');
+      if (canvas) canvas.style.opacity = val / 100;
+      const label = document.getElementById('opacityValLabel');
+      if (label) label.innerText = `${val}%`;
+      localStorage.setItem('nexus_bg_opacity', val);
+    }
+
+    /* ═════════════════════════════════════════════════
+       BACKGROUND VISUAL FX SWITCHER
+    ═════════════════════════════════════════════════ */
+    let currentBgEffect = localStorage.getItem('nexus_bg_effect') || 'cybergrid';
+
+    function setBgEffect(effect) {
+      currentBgEffect = effect;
+      localStorage.setItem('nexus_bg_effect', effect);
+      
+      const labels = {
+        'cybergrid': 'Cyber Grid',
+        'nebula': 'Quantum Nebula',
+        'warp': 'Hyperspace',
+        'aurora': 'Aurora Waves'
+      };
+      
+      const labelEl = document.getElementById('currentBgLabel');
+      if (labelEl) labelEl.innerText = labels[effect] || 'Cyber Grid';
+      
+      const menu = document.getElementById('bgDropdownMenu');
+      if (menu) menu.classList.add('hidden');
+    }
+
+    function toggleBgMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('bgDropdownMenu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('bgDropdownMenu');
+      const btn = document.getElementById('bgMenuBtn');
+      if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
+
+    /* ═════════════════════════════════════════════════
+       3-STATE SIDEBAR CONTROLLER LOGIC
+    ═════════════════════════════════════════════════ */
+    let sidebarMode = localStorage.getItem('nexus_sidebar_mode') || 'expanded';
+    let sidebarClickTimer = null;
+
+    function setSidebarMode(mode) {
+      sidebarMode = mode;
+      localStorage.setItem('nexus_sidebar_mode', mode);
+
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('sidebarToggleBtn');
+      const toggleDot = document.getElementById('toggleModeDot');
+      const headerBrand = document.getElementById('headerBrandBadge');
+
+      if (!sidebar) return;
+
+      sidebar.classList.remove('mode-icons', 'mode-hidden', 'hover-open');
+
+      if (mode === 'icons') {
+        sidebar.classList.add('mode-icons');
+        if (toggleDot) {
+          toggleDot.className = 'absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-sky-400 shadow-sm shadow-sky-400';
+          toggleDot.classList.remove('hidden');
+        }
+        if (toggleBtn) {
+          toggleBtn.setAttribute('title', 'Sidebar: Icon Mode (Click to expand, Double-click to hide)');
+          toggleBtn.classList.add('border-indigo-500/40', 'bg-indigo-500/10');
+        }
+        if (headerBrand) {
+          headerBrand.classList.remove('hidden');
+          headerBrand.classList.add('flex');
+        }
+      } else if (mode === 'hidden') {
+        sidebar.classList.add('mode-hidden');
+        if (toggleDot) {
+          toggleDot.className = 'absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-400 shadow-sm shadow-rose-400';
+          toggleDot.classList.remove('hidden');
+        }
+        if (toggleBtn) {
+          toggleBtn.setAttribute('title', 'Sidebar: Hidden (Click to restore)');
+          toggleBtn.classList.add('border-rose-500/40', 'bg-rose-500/10');
+        }
+        if (headerBrand) {
+          headerBrand.classList.remove('hidden');
+          headerBrand.classList.add('flex');
+        }
+      } else {
+        sidebarMode = 'expanded';
+        if (toggleDot) toggleDot.classList.add('hidden');
+        if (toggleBtn) {
+          toggleBtn.setAttribute('title', 'Toggle Sidebar (Click: Icon dock, Double-click: Hide sidebar)');
+          toggleBtn.classList.remove('border-indigo-500/40', 'bg-indigo-500/10', 'border-rose-500/40', 'bg-rose-500/10');
+        }
+        if (headerBrand) {
+          headerBrand.classList.add('hidden');
+          headerBrand.classList.remove('flex');
+        }
+      }
+    }
+
+    function handleSidebarToggleClick() {
+      if (window.innerWidth < 768) {
+        toggleMobileSidebar();
+        return;
+      }
+
+      if (sidebarClickTimer) {
+        clearTimeout(sidebarClickTimer);
+        sidebarClickTimer = null;
+        setSidebarMode('hidden');
+        return;
+      }
+
+      sidebarClickTimer = setTimeout(() => {
+        sidebarClickTimer = null;
+        if (sidebarMode === 'expanded') {
+          setSidebarMode('icons');
+        } else if (sidebarMode === 'icons') {
+          setSidebarMode('expanded');
+        } else if (sidebarMode === 'hidden') {
+          setSidebarMode('expanded');
+        }
+      }, 220);
+    }
+
+    function handleSidebarToggleDblClick() {
+      if (sidebarClickTimer) {
+        clearTimeout(sidebarClickTimer);
+        sidebarClickTimer = null;
+      }
+      setSidebarMode('hidden');
+    }
+
+    function initSidebarHover() {
+      const sidebar = document.getElementById('sidebar');
+      const headerLogo = document.getElementById('headerLogoBox');
+
+      if (sidebar) {
+        sidebar.addEventListener('mouseenter', () => {
+          if (sidebarMode === 'icons') {
+            sidebar.classList.add('hover-open');
+          }
+        });
+
+        sidebar.addEventListener('mouseleave', () => {
+          if (sidebarMode === 'icons') {
+            sidebar.classList.remove('hover-open');
+          }
+        });
+      }
+
+      if (headerLogo) {
+        headerLogo.addEventListener('mouseenter', () => {
+          if (sidebarMode === 'icons' && sidebar) {
+            sidebar.classList.add('hover-open');
+          }
+        });
+        headerLogo.addEventListener('mouseleave', () => {
+          if (sidebarMode === 'icons' && sidebar) {
+            setTimeout(() => {
+              if (!sidebar.matches(':hover')) {
+                sidebar.classList.remove('hover-open');
+              }
+            }, 120);
+          }
+        });
+      }
+    }
+
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      sidebar.classList.toggle('open');
+      backdrop.classList.toggle('hidden');
+    }
+
+    let lastAnswerRaw = "";
 
     function renderMarkdown(content) {
       if (!content) return "";
@@ -585,8 +1716,7 @@
         const btn = document.getElementById(`btn-${v}`);
         if (el) el.classList.add('hidden');
         if (btn) {
-          btn.classList.remove('bg-zinc-800/80', 'text-zinc-200', 'border-zinc-700/70');
-          btn.classList.add('text-zinc-400');
+          btn.classList.remove('active');
         }
       });
 
@@ -594,8 +1724,14 @@
       const activeBtn = document.getElementById(`btn-${viewName}`);
       if (activeEl) activeEl.classList.remove('hidden');
       if (activeBtn) {
-        activeBtn.classList.add('bg-zinc-800/80', 'text-zinc-200', 'border-zinc-700/70');
-        activeBtn.classList.remove('text-zinc-400');
+        activeBtn.classList.add('active');
+      }
+
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        backdrop.classList.add('hidden');
       }
 
       if (viewName === 'kb') loadKnowledgeBase();
@@ -621,7 +1757,7 @@
         sidebarList.innerHTML = '';
 
         if (!data || data.length === 0) {
-          sidebarList.innerHTML = '<div class="text-[11px] text-zinc-500 px-2 py-1">No documents indexed.</div>';
+          sidebarList.innerHTML = '<div class="text-[11px] opacity-60 px-2 py-1">No documents indexed.</div>';
           return;
         }
 
@@ -631,11 +1767,13 @@
           opt.innerText = d.name;
           select.appendChild(opt);
 
-          // Add to sidebar quick list
           sidebarList.innerHTML += `
-            <div onclick="selectScope('${d.name}')" class="px-2 py-1.5 rounded hover:bg-zinc-800/60 cursor-pointer text-[11px] text-zinc-300 flex items-center justify-between transition truncate">
-              <span class="truncate"><i class="fa-regular fa-file-lines text-zinc-500 mr-1.5"></i>${d.name}</span>
-              <span class="text-[10px] text-zinc-500">${d.total_pages || 1}p</span>
+            <div onclick="selectScope('${d.name.replace(/'/g, "\\'")}')" title="${d.name} (${d.total_pages || 1} pages)" class="sidebar-doc-item px-2.5 py-2 rounded-xl cursor-pointer text-[11px] flex items-center justify-between transition truncate group">
+              <span class="doc-title flex items-center truncate">
+                <i class="fa-regular fa-file-lines text-indigo-400 mr-2 shrink-0"></i>
+                <span class="doc-text truncate font-medium">${d.name}</span>
+              </span>
+              <span class="doc-badge text-[10px] font-mono shrink-0 opacity-75">${d.total_pages || 1}p</span>
             </div>
           `;
         });
@@ -668,11 +1806,10 @@
       if (!query) return;
 
       if (!activeDataset) {
-        alert("Please select an active document scope from the top-right dropdown.");
+        alert("Please select an active document scope from the top dropdown.");
         return;
       }
 
-      // UI Transition
       document.getElementById('welcomeState').classList.add('hidden');
       const resContainer = document.getElementById('resultContainer');
       resContainer.classList.remove('hidden');
@@ -687,9 +1824,9 @@
       executeBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Running`;
 
       ansBox.innerHTML = `
-        <div class="flex items-center gap-2.5 text-zinc-400 py-3 text-xs">
-          <i class="fa-solid fa-circle-notch fa-spin text-brand-400"></i>
-          <span>Retrieving chunks, running Cross-Encoder reranker, and synthesizing answer...</span>
+        <div class="flex items-center gap-3 py-4 text-xs opacity-75">
+          <i class="fa-solid fa-circle-notch fa-spin text-indigo-400 text-sm"></i>
+          <span>Retrieving chunks, running Cross-Encoder reranker, and synthesizing answer with Gemini...</span>
         </div>
       `;
 
@@ -701,41 +1838,38 @@
         });
         const data = await res.json();
 
-        // Render Traces
         if (data.trace && data.trace.length) {
           traceContent.innerHTML = data.trace.map(t => `
-            <div class="flex items-start gap-2">
-              <span class="text-brand-400 font-semibold shrink-0">[${t.agent}]</span>
-              <span class="text-zinc-300">${t.message}</span>
+            <div class="flex items-start gap-2.5">
+              <span class="text-indigo-400 font-semibold shrink-0">[${t.agent}]</span>
+              <span>${t.message}</span>
             </div>
           `).join('');
           document.getElementById('traceSummaryLabel').innerText = `Completed ${data.trace.length} pipeline steps`;
         }
 
-        // Render Answer
         if (data.found_in_dataset) {
           lastAnswerRaw = data.answer;
           ansBox.innerHTML = renderMarkdown(data.answer);
           statusTag.innerText = "Verified Grounded";
-          statusTag.className = "text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-md";
+          statusTag.className = "text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-lg shadow-sm shadow-emerald-500/20";
 
-          // Render Citations
           if (data.sources && data.sources.length) {
             citationsList.innerHTML = data.sources.map(s => `
-              <span class="inline-flex items-center gap-1 text-[11px] bg-zinc-800/90 text-zinc-300 border border-zinc-700/60 px-2 py-0.5 rounded">
-                <i class="fa-regular fa-bookmark text-brand-400"></i> ${s}
+              <span class="inline-flex items-center gap-1.5 text-[11px] bg-white/[0.04] border border-white/[0.08] px-2.5 py-1 rounded-lg">
+                <i class="fa-regular fa-bookmark text-indigo-400"></i> ${s}
               </span>
             `).join('');
           } else {
-            citationsList.innerHTML = `<span class="text-[11px] text-zinc-500">Direct grounded context</span>`;
+            citationsList.innerHTML = `<span class="text-[11px] opacity-60">Direct grounded context</span>`;
           }
         } else {
           lastAnswerRaw = data.answer;
-          ansBox.innerHTML = `<p class="text-amber-400 font-medium">${data.answer}</p>`;
+          ansBox.innerHTML = `<p class="text-amber-500 font-medium">${data.answer}</p>`;
           statusTag.innerText = "Not In Dataset";
-          statusTag.className = "text-[11px] font-medium text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-md";
+          statusTag.className = "text-[11px] font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2.5 py-1 rounded-lg shadow-sm shadow-amber-500/20";
           citationsList.innerHTML = `
-            <button onclick="switchToGlobalAI('${encodeURIComponent(query)}')" class="text-[11px] text-brand-400 hover:text-brand-300 underline font-medium">
+            <button onclick="switchToGlobalAI('${encodeURIComponent(query)}')" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-semibold">
               Search the web via Global AI
             </button>
           `;
@@ -744,7 +1878,7 @@
         ansBox.innerHTML = `<p class="text-rose-400 font-medium">Request failed: ${err.message}</p>`;
       } finally {
         executeBtn.disabled = false;
-        executeBtn.innerHTML = `<span>Ask</span><kbd class="text-[9px] bg-zinc-300/80 px-1 py-0.5 rounded text-zinc-900 font-mono">⏎</kbd>`;
+        executeBtn.innerHTML = `<span>Ask</span><kbd class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono">⏎</kbd>`;
         document.getElementById('chatFeed').scrollTop = document.getElementById('chatFeed').scrollHeight;
       }
     }
@@ -766,7 +1900,7 @@
     // Knowledge Base View
     async function loadKnowledgeBase() {
       const container = document.getElementById('datasetListContainer');
-      container.innerHTML = '<p class="text-xs text-zinc-500">Loading datasets...</p>';
+      container.innerHTML = '<p class="text-xs opacity-60">Loading datasets...</p>';
 
       try {
         const res = await fetch(`${API_BASE}/datasets`);
@@ -774,17 +1908,17 @@
         document.getElementById('kbDocCount').innerText = data.length;
 
         if (!data || !data.length) {
-          container.innerHTML = '<p class="text-xs text-zinc-500">No documents indexed in SQLite.</p>';
+          container.innerHTML = '<p class="text-xs opacity-60">No documents indexed in SQLite.</p>';
           return;
         }
 
         container.innerHTML = data.map(d => `
-          <div onclick="selectKBDoc('${d.name}')" class="p-3 rounded-lg bg-surface-50 border border-surface-border hover:border-zinc-500 transition cursor-pointer flex items-center justify-between">
+          <div onclick="selectKBDoc('${d.name.replace(/'/g, "\\'")}')" class="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-indigo-500/40 hover:bg-white/[0.06] transition cursor-pointer flex items-center justify-between group">
             <div class="truncate mr-2">
-              <p class="text-xs font-medium text-zinc-200 truncate">${d.name}</p>
-              <p class="text-[10px] text-zinc-500">${d.total_pages || 1} pages</p>
+              <p class="text-xs font-semibold group-hover:text-indigo-400 truncate">${d.name}</p>
+              <p class="text-[10px] opacity-60 font-mono">${d.total_pages || 1} pages</p>
             </div>
-            <button onclick="event.stopPropagation(); deleteDataset('${d.name}')" title="Delete document" class="text-zinc-500 hover:text-rose-400 p-1.5 transition">
+            <button onclick="event.stopPropagation(); deleteDataset('${d.name.replace(/'/g, "\\'")}')" title="Delete document" class="hover:text-rose-400 opacity-60 hover:opacity-100 p-1.5 rounded-lg transition hover:bg-rose-500/10">
               <i class="fa-regular fa-trash-can text-xs"></i>
             </button>
           </div>
@@ -801,24 +1935,24 @@
     async function selectKBDoc(datasetName) {
       document.getElementById('kbHistoryTitle').innerText = `Query History: ${datasetName}`;
       const container = document.getElementById('kbHistoryContainer');
-      container.innerHTML = '<p class="text-xs text-zinc-500">Loading history...</p>';
+      container.innerHTML = '<p class="text-xs opacity-60">Loading history...</p>';
 
       try {
         const res = await fetch(`${API_BASE}/datasets/${encodeURIComponent(datasetName)}/history`);
         const logs = await res.json();
 
         if (!logs || !logs.length) {
-          container.innerHTML = `<p class="text-xs text-zinc-500">No previous queries recorded for <b>${datasetName}</b>.</p>`;
+          container.innerHTML = `<p class="text-xs opacity-60">No previous queries recorded for <b>${datasetName}</b>.</p>`;
           return;
         }
 
         container.innerHTML = logs.map(l => `
-          <div class="p-3.5 bg-surface-50 border border-surface-border rounded-xl space-y-2 text-xs">
+          <div class="p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl space-y-2 text-xs">
             <div class="flex items-center justify-between">
-              <span class="font-medium text-zinc-200">${l.user_query}</span>
-              <span class="text-[10px] text-zinc-500">${l.timestamp}</span>
+              <span class="font-semibold">${l.user_query}</span>
+              <span class="text-[10px] opacity-60 font-mono">${l.timestamp}</span>
             </div>
-            <div class="text-zinc-400 prose-custom text-xs pl-3 border-l-2 border-brand-500/40">
+            <div class="prose-custom text-xs pl-3 border-l-2 border-indigo-500/40">
               ${renderMarkdown(l.ai_response)}
             </div>
           </div>
@@ -867,12 +2001,12 @@
       formData.append('file', file);
 
       const status = document.getElementById('uploadStatus');
-      status.innerHTML = `<span class="text-zinc-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Ingesting and indexing ${file.name}...</span>`;
+      status.innerHTML = `<span class="opacity-75"><i class="fa-solid fa-spinner fa-spin mr-1.5 text-indigo-400"></i> Ingesting and indexing ${file.name}...</span>`;
 
       try {
         const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData });
         const data = await res.json();
-        status.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-check mr-1.5"></i> Successfully indexed ${data.filename} (${data.total_chunks} chunks)!</span>`;
+        status.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-check mr-1.5"></i> Successfully indexed ${data.filename} (${data.total_chunks} chunks)!</span>`;
         loadDatasets();
       } catch (e) {
         status.innerHTML = `<span class="text-rose-400">Upload failed: ${e.message}</span>`;
@@ -904,7 +2038,7 @@
         return;
       }
 
-      container.innerHTML = `<p class="text-xs text-zinc-400"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Analyzing comparative context between ${doc_a} and ${doc_b}...</p>`;
+      container.innerHTML = `<p class="text-xs opacity-75"><i class="fa-solid fa-spinner fa-spin mr-1.5 text-indigo-400"></i> Analyzing comparative context between ${doc_a} and ${doc_b}...</p>`;
 
       try {
         await fetch(`${API_BASE}/compare/analyze`, {
@@ -924,18 +2058,18 @@
       const data = await res.json();
 
       if (!data || !data.length) {
-        container.innerHTML = `<p class="text-xs text-zinc-500">No comparative sessions run yet.</p>`;
+        container.innerHTML = `<p class="text-xs opacity-60">No comparative sessions run yet.</p>`;
         return;
       }
 
       container.innerHTML = data.map(c => `
-        <div class="p-3.5 bg-surface-50 border border-surface-border rounded-xl space-y-2 text-xs">
-          <div class="flex items-center justify-between text-brand-400 font-semibold text-[11px]">
+        <div class="p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl space-y-2 text-xs">
+          <div class="flex items-center justify-between text-indigo-400 font-semibold text-[11px]">
             <span>${c.dataset_name}</span>
-            <span class="text-zinc-500 font-normal">${c.timestamp}</span>
+            <span class="opacity-60 font-mono">${c.timestamp}</span>
           </div>
-          <p class="text-zinc-200 font-medium">Q: ${c.user_query}</p>
-          <div class="text-zinc-400 prose-custom text-xs pl-3 border-l-2 border-brand-500/40">
+          <p class="font-semibold">Q: ${c.user_query}</p>
+          <div class="prose-custom text-xs pl-3 border-l-2 border-indigo-500/40">
             ${renderMarkdown(c.ai_response)}
           </div>
         </div>
@@ -963,7 +2097,7 @@
       const chat = document.getElementById('globalChatContainer');
       chat.innerHTML += `
         <div class="text-right">
-          <span class="inline-block bg-zinc-800 text-zinc-100 px-3.5 py-2 rounded-xl text-xs border border-zinc-700/60 max-w-md">${q}</span>
+          <span class="inline-block bg-indigo-600/30 text-white px-4 py-2.5 rounded-xl text-xs border border-indigo-500/30 max-w-md shadow-md">${q}</span>
         </div>
       `;
       input.value = '';
@@ -976,10 +2110,14 @@
           body: JSON.stringify({ query: q })
         });
         const data = await res.json();
+        window.lastGlobalAnswerText = data.answer || data.response || "";
         chat.innerHTML += `
           <div class="text-left">
-            <div class="inline-block bg-surface-50 border border-surface-border text-zinc-300 p-4 rounded-xl text-xs max-w-xl prose-custom">
+            <div class="inline-block bg-white/[0.03] border border-white/[0.07] p-4 rounded-xl text-xs max-w-xl prose-custom shadow-lg">
               ${renderMarkdown(data.answer)}
+              <button type="button" onclick="readAloudGlobal(this)" class="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition" title="Listen to Answer">
+                <i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>
+              </button>
             </div>
           </div>
         `;
@@ -989,11 +2127,757 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    /* ═════════════════════════════════════════════════
+       MULTI-MODE INTERACTIVE BACKGROUND CANVAS ENGINE
+    ═════════════════════════════════════════════════ */
+    (function initVisualBackgroundEngine() {
+      const canvas = document.getElementById('particleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width = 0, height = 0;
+      let mouse = { x: -1000, y: -1000, speed: 0, lastX: -1000, lastY: -1000 };
+      let time = 0;
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initNebulaNodes();
+        initWarpStars();
+      }
+
+      document.addEventListener('mousemove', e => {
+        const dx = e.clientX - mouse.x;
+        const dy = e.clientY - mouse.y;
+        mouse.speed = Math.hypot(dx, dy);
+        mouse.lastX = mouse.x;
+        mouse.lastY = mouse.y;
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      // 1. NEBULA & SYNAPSE ENGINE
+      let nebulaNodes = [];
+      const NEBULA_COUNT = 110;
+
+      class NebulaNode {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = Math.random() * (width || window.innerWidth);
+          this.y = Math.random() * (height || window.innerHeight);
+          this.vx = (Math.random() - 0.5) * 0.7;
+          this.vy = (Math.random() - 0.5) * 0.7;
+          this.radius = Math.random() * 2.8 + 1.2;
+          this.baseAlpha = Math.random() * 0.45 + 0.35;
+          this.pulseOffset = Math.random() * Math.PI * 2;
+          this.colorType = Math.random() > 0.4 ? 'indigo' : 'cyan';
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          if (this.x < 0) this.x = width;
+          if (this.x > width) this.x = 0;
+          if (this.y < 0) this.y = height;
+          if (this.y > height) this.y = 0;
+
+          // Mouse gravity pull
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 220 && dist > 10) {
+            const force = (220 - dist) / 220 * 0.04;
+            this.vx += (dx / dist) * force;
+            this.vy += (dy / dist) * force;
+          }
+          this.vx *= 0.985;
+          this.vy *= 0.985;
+        }
+        draw(context, isLight) {
+          const pulse = 0.8 + 0.2 * Math.sin(time * 3 + this.pulseOffset);
+          const alpha = Math.min(1, this.baseAlpha * pulse * (isLight ? 0.7 : 1));
+          const rad = this.radius * pulse;
+
+          const grad = context.createRadialGradient(this.x, this.y, 0, this.x, this.y, rad * 4);
+          if (this.colorType === 'cyan') {
+            grad.addColorStop(0, isLight ? `rgba(2, 132, 199, ${alpha})` : `rgba(56, 189, 248, ${alpha})`);
+            grad.addColorStop(0.5, isLight ? `rgba(2, 132, 199, ${alpha * 0.3})` : `rgba(56, 189, 248, ${alpha * 0.3})`);
+            grad.addColorStop(1, 'transparent');
+          } else {
+            grad.addColorStop(0, isLight ? `rgba(99, 102, 241, ${alpha})` : `rgba(129, 140, 248, ${alpha})`);
+            grad.addColorStop(0.5, isLight ? `rgba(99, 102, 241, ${alpha * 0.3})` : `rgba(129, 140, 248, ${alpha * 0.3})`);
+            grad.addColorStop(1, 'transparent');
+          }
+          context.beginPath();
+          context.arc(this.x, this.y, rad * 4, 0, Math.PI * 2);
+          context.fillStyle = grad;
+          context.fill();
+
+          context.beginPath();
+          context.arc(this.x, this.y, rad, 0, Math.PI * 2);
+          context.fillStyle = isLight ? (this.colorType === 'cyan' ? '#0284c7' : '#6366f1') : '#ffffff';
+          context.fill();
+        }
+      }
+
+      function initNebulaNodes() {
+        nebulaNodes = [];
+        for (let i = 0; i < NEBULA_COUNT; i++) nebulaNodes.push(new NebulaNode());
+      }
+
+      // 2. CYBER 3D PERSPECTIVE WAVE GRID
+      function drawCyberGrid(context, isLight) {
+        const cols = 28;
+        const rows = 18;
+        const colStep = width / (cols - 1);
+        const horizonY = height * 0.22;
+
+        const points = [];
+        for (let r = 0; r < rows; r++) {
+          points[r] = [];
+          const depth = Math.pow(r / (rows - 1), 1.45);
+          const yBase = horizonY + depth * (height - horizonY);
+
+          for (let c = 0; c < cols; c++) {
+            const xBase = c * colStep;
+            const xOffset = (xBase - width / 2) * (0.35 + 0.65 * depth);
+            const x = width / 2 + xOffset;
+
+            const wave1 = Math.sin(c * 0.45 + time * 2.2) * 16 * depth;
+            const wave2 = Math.cos(r * 0.55 + time * 1.8) * 12 * depth;
+            
+            const dx = x - mouse.x;
+            const dy = yBase - mouse.y;
+            const dist = Math.hypot(dx, dy);
+            let mouseDistort = 0;
+            if (dist < 260) {
+              mouseDistort = -Math.cos((dist / 260) * Math.PI) * 28 * (1 - dist / 260);
+            }
+
+            const y = yBase + wave1 + wave2 + mouseDistort;
+            points[r][c] = { x, y, depth };
+          }
+        }
+
+        for (let r = 0; r < rows; r++) {
+          const pRow = points[r];
+          const depth = r / (rows - 1);
+          const alpha = Math.min(1, Math.max(0.08, depth * (isLight ? 0.4 : 0.75)));
+          context.beginPath();
+          context.moveTo(pRow[0].x, pRow[0].y);
+          for (let c = 1; c < cols; c++) {
+            const xc = (pRow[c].x + pRow[c - 1].x) / 2;
+            const yc = (pRow[c].y + pRow[c - 1].y) / 2;
+            context.quadraticCurveTo(pRow[c - 1].x, pRow[c - 1].y, xc, yc);
+          }
+          context.lineTo(pRow[cols - 1].x, pRow[cols - 1].y);
+          context.strokeStyle = isLight 
+            ? `rgba(99, 102, 241, ${alpha * 0.55})` 
+            : `rgba(56, 189, 248, ${alpha})`;
+          context.lineWidth = isLight ? 1.0 : 1.4;
+          context.shadowBlur = isLight ? 0 : 8 * depth;
+          context.shadowColor = '#38bdf8';
+          context.stroke();
+        }
+
+        for (let c = 0; c < cols; c += 2) {
+          context.beginPath();
+          context.moveTo(points[0][c].x, points[0][c].y);
+          for (let r = 1; r < rows; r++) {
+            context.lineTo(points[r][c].x, points[r][c].y);
+          }
+          const alpha = isLight ? 0.22 : 0.42;
+          context.strokeStyle = isLight 
+            ? `rgba(147, 51, 234, ${alpha * 0.5})` 
+            : `rgba(168, 85, 247, ${alpha})`;
+          context.lineWidth = 0.85;
+          context.shadowBlur = isLight ? 0 : 4;
+          context.shadowColor = '#a855f7';
+          context.stroke();
+        }
+        context.shadowBlur = 0;
+      }
+
+      // 3. HYPERSPACE WARP SPEED ENGINE
+      let warpStars = [];
+      const WARP_COUNT = 320;
+      class WarpStar {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = (Math.random() - 0.5) * (width || window.innerWidth) * 2;
+          this.y = (Math.random() - 0.5) * (height || window.innerHeight) * 2;
+          this.z = Math.random() * 1000 + 1;
+          this.prevZ = this.z;
+        }
+        update(speed) {
+          this.prevZ = this.z;
+          this.z -= speed;
+          if (this.z <= 1) {
+            this.reset();
+            this.z = 1000;
+            this.prevZ = this.z;
+          }
+        }
+        draw(context, cx, cy, isLight) {
+          const k = 400 / this.z;
+          const px = cx + this.x * k;
+          const py = cy + this.y * k;
+
+          const prevK = 400 / this.prevZ;
+          const prevX = cx + this.x * prevK;
+          const prevY = cy + this.y * prevK;
+
+          if (px < 0 || px > width || py < 0 || py > height) return;
+
+          const alpha = Math.min(1, Math.max(0.15, (1000 - this.z) / 1000));
+          context.beginPath();
+          context.moveTo(prevX, prevY);
+          context.lineTo(px, py);
+          context.strokeStyle = isLight 
+            ? `rgba(99, 102, 241, ${alpha * 0.8})` 
+            : `rgba(56, 189, 248, ${alpha})`;
+          context.lineWidth = Math.min(2.8, (1000 - this.z) / 300);
+          context.stroke();
+
+          context.beginPath();
+          context.arc(px, py, Math.min(2, (1000 - this.z) / 400), 0, Math.PI * 2);
+          context.fillStyle = isLight ? '#4f46e5' : '#ffffff';
+          context.fill();
+        }
+      }
+
+      function initWarpStars() {
+        warpStars = [];
+        for (let i = 0; i < WARP_COUNT; i++) warpStars.push(new WarpStar());
+      }
+
+      // 4. AURORA BOREALIS HARMONIC WAVES
+      function drawAurora(context, isLight) {
+        const layers = [
+          { color: isLight ? 'rgba(99, 102, 241, 0.22)' : 'rgba(99, 102, 241, 0.42)', speed: 1.2, freq: 0.003, amp: 85, yOff: 0.35 },
+          { color: isLight ? 'rgba(56, 189, 248, 0.22)' : 'rgba(56, 189, 248, 0.4)', speed: 0.8, freq: 0.0025, amp: 105, yOff: 0.45 },
+          { color: isLight ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.38)', speed: 1.5, freq: 0.0035, amp: 95, yOff: 0.55 },
+          { color: isLight ? 'rgba(52, 211, 153, 0.18)' : 'rgba(52, 211, 153, 0.35)', speed: 0.9, freq: 0.002, amp: 75, yOff: 0.65 }
+        ];
+
+        layers.forEach(layer => {
+          context.beginPath();
+          context.moveTo(0, height);
+          for (let x = 0; x <= width; x += 15) {
+            const w1 = Math.sin(x * layer.freq + time * layer.speed) * layer.amp;
+            const w2 = Math.cos(x * layer.freq * 1.8 - time * layer.speed * 0.7) * (layer.amp * 0.5);
+
+            const dx = x - mouse.x;
+            const mouseDip = Math.exp(-Math.pow(dx / 220, 2)) * 60;
+
+            const y = height * layer.yOff + w1 + w2 - mouseDip;
+            context.lineTo(x, y);
+          }
+          context.lineTo(width, height);
+          context.closePath();
+
+          const grad = context.createLinearGradient(0, height * (layer.yOff - 0.2), 0, height);
+          grad.addColorStop(0, layer.color);
+          grad.addColorStop(1, 'transparent');
+          context.fillStyle = grad;
+          context.fill();
+        });
+      }
+
+      // Interactive Click Shockwaves
+      const clickWaves = [];
+      document.addEventListener('mousedown', e => {
+        clickWaves.push({ x: e.clientX, y: e.clientY, radius: 10, maxRadius: 300, alpha: 1.0 });
+      });
+
+      function loop() {
+        time += 0.016;
+        const isLight = document.documentElement.classList.contains('light');
+
+        ctx.clearRect(0, 0, width, height);
+
+        if (currentBgEffect === 'cybergrid') {
+          drawCyberGrid(ctx, isLight);
+        } else if (currentBgEffect === 'warp') {
+          const warpSpeed = 12 + Math.min(25, mouse.speed * 0.5);
+          const cx = width / 2 + (mouse.x - width / 2) * 0.25;
+          const cy = height / 2 + (mouse.y - height / 2) * 0.25;
+          warpStars.forEach(s => {
+            s.update(warpSpeed);
+            s.draw(ctx, cx, cy, isLight);
+          });
+        } else if (currentBgEffect === 'aurora') {
+          drawAurora(ctx, isLight);
+        } else {
+          // 'nebula'
+          const CONNECT_DIST = 160;
+          for (let i = 0; i < nebulaNodes.length; i++) {
+            for (let j = i + 1; j < nebulaNodes.length; j++) {
+              const dx = nebulaNodes[i].x - nebulaNodes[j].x;
+              const dy = nebulaNodes[i].y - nebulaNodes[j].y;
+              const dist = Math.hypot(dx, dy);
+              if (dist < CONNECT_DIST) {
+                const alpha = (1 - dist / CONNECT_DIST) * (isLight ? 0.3 : 0.45);
+                ctx.beginPath();
+                ctx.moveTo(nebulaNodes[i].x, nebulaNodes[i].y);
+                ctx.lineTo(nebulaNodes[j].x, nebulaNodes[j].y);
+                ctx.strokeStyle = isLight 
+                  ? `rgba(99, 102, 241, ${alpha})` 
+                  : `rgba(129, 140, 248, ${alpha})`;
+                ctx.lineWidth = 0.9;
+                ctx.stroke();
+              }
+            }
+          }
+
+          nebulaNodes.forEach(n => {
+            const dx = n.x - mouse.x;
+            const dy = n.y - mouse.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 190) {
+              const alpha = (1 - dist / 190) * (isLight ? 0.5 : 0.75);
+              ctx.beginPath();
+              ctx.moveTo(n.x, n.y);
+              ctx.lineTo(mouse.x, mouse.y);
+              ctx.strokeStyle = isLight 
+                ? `rgba(2, 132, 199, ${alpha})` 
+                : `rgba(56, 189, 248, ${alpha})`;
+              ctx.lineWidth = 1.3;
+              ctx.stroke();
+            }
+          });
+
+          nebulaNodes.forEach(n => {
+            n.update();
+            n.draw(ctx, isLight);
+          });
+        }
+
+        // Draw and update click ripples
+        for (let i = clickWaves.length - 1; i >= 0; i--) {
+          const w = clickWaves[i];
+          w.radius += 8;
+          w.alpha = (1 - w.radius / w.maxRadius);
+          if (w.alpha <= 0) {
+            clickWaves.splice(i, 1);
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = isLight 
+            ? `rgba(99, 102, 241, ${w.alpha * 0.7})` 
+            : `rgba(56, 189, 248, ${w.alpha * 0.85})`;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
+        }
+
+        requestAnimationFrame(loop);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      loop();
+    })();
+
+    /* ═══════════════════════════════════════
+       SPACESHIP CURSOR & ION PLUME ENGINE
+    ═══════════════════════════════════════ */
+    (function initSpaceshipCursor() {
+      if (window.matchMedia('(pointer: coarse)').matches) return;
+
+      const cursorEl = document.getElementById('spaceshipCursor');
+      const shipWrapper = document.getElementById('shipWrapper');
+      const trailCanvas = document.getElementById('cursorTrailCanvas');
+      if (!cursorEl || !shipWrapper || !trailCanvas) return;
+
+      const ctx = trailCanvas.getContext('2d');
+      function resizeTrail() {
+        trailCanvas.width = window.innerWidth;
+        trailCanvas.height = window.innerHeight;
+      }
+      resizeTrail();
+      window.addEventListener('resize', resizeTrail);
+
+      let mouseX = -100, mouseY = -100;
+      let targetAngle = 0;
+      let currentAngle = 0;
+      let lastMoveTime = 0;
+      const particles = [];
+
+      class IonParticle {
+        constructor(x, y, angle, speed) {
+          this.x = x;
+          this.y = y;
+          const spread = (Math.random() - 0.5) * 0.7;
+          const particleSpeed = Math.random() * 2 + 1.2 + Math.min(speed * 0.12, 4);
+          this.vx = -Math.sin(angle + spread) * particleSpeed;
+          this.vy = Math.cos(angle + spread) * particleSpeed;
+          this.radius = Math.random() * 2.2 + 1.0;
+          this.alpha = 1.0;
+          this.decay = Math.random() * 0.035 + 0.025;
+          this.color = Math.random() > 0.35 ? '#38bdf8' : '#818cf8';
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vx *= 0.95;
+          this.vy *= 0.95;
+          this.alpha -= this.decay;
+        }
+        draw(context) {
+          context.save();
+          context.globalAlpha = Math.max(0, this.alpha);
+          context.shadowBlur = 8;
+          context.shadowColor = this.color;
+          context.fillStyle = this.color;
+          context.beginPath();
+          context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          context.fill();
+          context.restore();
+        }
+      }
+
+      function spawnIonParticles(count, speed) {
+        const engineX = mouseX - Math.sin(currentAngle) * 12;
+        const engineY = mouseY + Math.cos(currentAngle) * 12;
+        for (let i = 0; i < count; i++) {
+          particles.push(new IonParticle(
+            engineX + (Math.random() - 0.5) * 4,
+            engineY + (Math.random() - 0.5) * 4,
+            currentAngle,
+            speed
+          ));
+        }
+      }
+
+      document.addEventListener('mousemove', e => {
+        cursorEl.classList.add('active');
+        const now = performance.now();
+        const dx = e.clientX - mouseX;
+        const dy = e.clientY - mouseY;
+        const dist = Math.hypot(dx, dy);
+
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        cursorEl.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+
+        if (dist > 1.2) {
+          targetAngle = Math.atan2(dy, dx) + Math.PI / 2;
+          lastMoveTime = now;
+          const spawnCount = dist > 14 ? 2 : 1;
+          spawnIonParticles(spawnCount, dist);
+        }
+
+        const interactiveTarget = e.target.closest('button, a, input, select, textarea, .nav-btn, .suggestion-chip, .sidebar-doc-item, [role="button"], label');
+        if (interactiveTarget) {
+          cursorEl.classList.add('hovering');
+        } else {
+          cursorEl.classList.remove('hovering');
+        }
+      });
+
+      document.addEventListener('mouseleave', () => {
+        cursorEl.classList.remove('active');
+      });
+
+      document.addEventListener('mouseenter', () => {
+        cursorEl.classList.add('active');
+      });
+
+      document.addEventListener('mousedown', e => {
+        const wave = document.createElement('div');
+        wave.className = 'warp-wave';
+        wave.style.left = `${e.clientX}px`;
+        wave.style.top = `${e.clientY}px`;
+        document.body.appendChild(wave);
+        setTimeout(() => wave.remove(), 450);
+
+        spawnIonParticles(8, 10);
+      });
+
+      function render() {
+        let diff = targetAngle - currentAngle;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        currentAngle += diff * 0.26;
+
+        if (performance.now() - lastMoveTime > 260) {
+          const idleAngle = -Math.PI / 7;
+          let idleDiff = idleAngle - targetAngle;
+          while (idleDiff < -Math.PI) idleDiff += Math.PI * 2;
+          while (idleDiff > Math.PI) idleDiff -= Math.PI * 2;
+          targetAngle += idleDiff * 0.04;
+        }
+
+        shipWrapper.style.transform = `rotate(${currentAngle}rad)`;
+
+        ctx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.update();
+          if (p.alpha <= 0) {
+            particles.splice(i, 1);
+          } else {
+            p.draw(ctx);
+          }
+        }
+
+        requestAnimationFrame(render);
+      }
+      requestAnimationFrame(render);
+    })();
+
     window.onload = () => {
+      initTheme();
+      setBgEffect(currentBgEffect);
+      
+      const savedOpacity = localStorage.getItem('nexus_bg_opacity') || '100';
+      handleOpacitySlide(savedOpacity);
+      const sliderEl = document.getElementById('bgOpacitySlider');
+      if (sliderEl) sliderEl.value = savedOpacity;
+
+      const savedCursor = localStorage.getItem('nexus_cursor_enabled');
+      if (savedCursor !== null) {
+        const isCursorOn = savedCursor === 'true';
+        toggleSpaceshipCursor(isCursorOn);
+        const cursorInput = document.getElementById('cursorToggleInput');
+        if (cursorInput) cursorInput.checked = isCursorOn;
+      }
+
+      const savedAccent = localStorage.getItem('nexus_accent_color');
+      if (savedAccent) setAccentColor(savedAccent);
+
       initUserProfile();
+      initSidebarHover();
+      setSidebarMode(sidebarMode);
       loadDatasets();
     };
 
+      
+  function readAloudGrounded(btn) {
+  // If already speaking, stop it
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+    btn.classList.remove('text-rose-400');
+    return;
+  }
+
+  const answerBox = document.getElementById('groundedAnswerBox');
+  if (!answerBox || !answerBox.innerText.trim()) return;
+
+  // Clean markdown symbols so speech sounds natural
+  const plainText = answerBox.innerText
+    .replace(/[#*`_~]/g, '')
+    .replace(/\|/g, ', ')
+    .replace(/\n+/g, '. ')
+    .trim();
+
+  const utterance = new SpeechSynthesisUtterance(plainText);
+  utterance.rate = 1.0;
+
+  utterance.onstart = () => {
+    btn.innerHTML = '<i class="fa-solid fa-stop text-xs"></i> <span>Stop</span>';
+    btn.classList.add('text-rose-400');
+  };
+
+  utterance.onend = () => {
+    btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+    btn.classList.remove('text-rose-400');
+  };
+
+  utterance.onerror = () => {
+    btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+    btn.classList.remove('text-rose-400');
+  };
+
+  window.speechSynthesis.speak(utterance);
+ }
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    const micBtn = document.getElementById('micBtn');
+    const inputField = document.getElementById('ragQueryInput');
+
+    // Microphone glows red while you are speaking
+    recognition.onstart = () => {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone-lines text-rose-500 animate-pulse text-sm"></i>';
+    };
+
+    // Puts your spoken words into the input box
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      inputField.value = transcript;
+      inputField.focus();
+    };
+
+    recognition.onerror = () => {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone text-sm"></i>';
+    };
+
+    recognition.onend = () => {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone text-sm"></i>';
+    };
+
+    recognition.start();
+  }
+
+  // ==========================================
+  // GLOBAL AI READ ALOUD (100% RELIABLE)
+  // ==========================================
+  window.globalUtterance = null;
+  window.lastGlobalAnswerText = "";
+
+  function readAloudGlobal(btn = null) {
+    // 1. Safely grab the button even if (this) was forgotten in HTML
+    if (!btn && window.event) {
+      btn = window.event.target.closest('button');
+    }
+
+    // 2. TOGGLE: If already speaking, stop and reset button
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      window.globalUtterance = null;
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+        btn.classList.remove('text-rose-400');
+      }
+      return;
+    }
+
+    // 3. Find the answer box (checks all possible casings & names)
+    const answerBox =document.getElementById('globalAnswerBox')
+                  || document.getElementById('globalAnswer')
+                  || document.getElementById('globalResponse')
+                  || (btn ? btn.closest('.modal, .card, div') : null);
+
+    let rawText = "";
+    if (answerBox) {
+      // Clone and strip buttons so it doesn't read the word "Listen"
+      const clone = answerBox.cloneNode(true);
+      clone.querySelectorAll('button, svg, .badge, .btn').forEach(el => el.remove());
+      rawText = clone.innerText || clone.textContent;
+    }
+
+    // Check fallback memory if container was empty
+    if (!rawText.trim() && window.lastGlobalAnswerText) {
+      rawText = window.lastGlobalAnswerText;
+    }
+
+    if (!rawText || !rawText.trim()) {
+      alert("No answer text found to read! Make sure an answer is generated first.");
+      return;
+    }
+
+    // 4. Clean text: Prevent "dot dot" and strip markdown
+    const plainText = rawText
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/[#*`_~]/g, '')
+      .replace(/\|/g, ', ')
+      .replace(/[\.·•]{2,}/g, ', ')    // Removes multiple dots (prevents "dot dot")
+      .replace(/[\r\n]+/g, ', ')       // Turns newlines into natural pauses
+      .replace(/^[^a-zA-Z0-9]+/, '')   // Strips any starting punctuation
+      .trim();
+
+    if (!plainText) return;
+
+    // 5. Cancel any lingering audio & unlock Chrome audio engine
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
+
+    // 6. Create utterance and attach globally
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    window.globalUtterance = utterance; // Prevents Chrome garbage-collection bug
+    utterance.rate = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(v => v.lang.startsWith('en'));
+    if (englishVoice) utterance.voice = englishVoice;
+
+    utterance.onstart = () => {
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-stop text-xs"></i> <span>Stop</span>';
+        btn.classList.add('text-rose-400');
+      }
+    };
+
+    utterance.onend = () => {
+      window.globalUtterance = null;
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+        btn.classList.remove('text-rose-400');
+      }
+    };
+
+    utterance.onerror = (e) => {
+      console.warn("Speech synthesis notice:", e);
+      window.globalUtterance = null;
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-xs"></i> <span>Listen</span>';
+        btn.classList.remove('text-rose-400');
+      }
+    };
+
+    // 7. 50ms delay gives Chrome time to finish cancelling before starting speech
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 50);
+  }
+
+  // ==========================================
+// GLOBAL AI VOICE INPUT (Identical to RAG)
+// ==========================================
+function startGlobalVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Voice recognition is not supported in this browser. Please use Chrome or Edge.");
+    return;
+  }
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  const micBtn = document.getElementById('globalMicBtn');
+  const inputField = document.getElementById('globalInput');
+  // Microphone glows red while speaking
+  recognition.onstart = () => {
+    if (micBtn) {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone-lines text-rose-500 animate-pulse text-sm"></i>';
+    }
+  };
+  // Puts spoken words into Global AI input box
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    if (inputField) {
+      inputField.value = transcript;
+      inputField.focus();
+    }
+  };
+  recognition.onerror = () => {
+    if (micBtn) {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone text-sm"></i>';
+    }
+  };
+  recognition.onend = () => {
+    if (micBtn) {
+      micBtn.innerHTML = '<i class="fa-solid fa-microphone text-sm"></i>';
+    }
+  };
+  recognition.start();
+ }
+  </script>
   </script>
 </body>
 </html>

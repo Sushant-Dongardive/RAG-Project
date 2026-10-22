@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()  # This reads your .env file automatically
+
+load_dotenv() 
 
 
 # Ensures backend directory is accurately detected
@@ -15,7 +16,7 @@ DB_PATH = BACKEND_DIR / "rag_knowledge.db"
 DOCS_DIR.mkdir(parents=True, exist_ok=True)
 #,
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 100

@@ -231,7 +231,11 @@ def startup_event():
         for doc in all_files:
             ingest_file_to_db(doc)
 
-    reindex_all()
+    if vector_store.index is None or len(vector_store.metadata) != count or hybrid_retriever.bm25 is None:
+        reindex_all()
+    else:
+        print(f"[Startup] Vector and BM25 indexes already up to date ({count} chunks).")
+
 
 
 class QueryRequest(BaseModel):
@@ -333,7 +337,7 @@ def sync_datasets():
 
         total_chunks = reindex_all()
 
-        # Returns the exact key expected by your frontend alert: d.total_indexed_chunks
+        # Returns the exact key expected by our frontend alert: d.total_indexed_chunks
         return {
             "status": "success",
             "message": "Synchronized!",
